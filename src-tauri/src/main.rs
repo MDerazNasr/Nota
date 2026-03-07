@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    contextscaffold_nota_lib::run()
+    nota_lib::run()
 }
