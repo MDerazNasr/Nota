@@ -77,6 +77,22 @@ describe("notes store", () => {
     expect(restoredState.cursorIndex).toBe(0);
   });
 
+  it("persists item content updates from the editor", () => {
+    useNotesStore.getState().createItem("below");
+    const tab = activeTab();
+    const itemId = tab.items[0].id;
+
+    useNotesStore.getState().updateItemContent(tab.id, itemId, {
+      type: "doc",
+      content: [{ type: "paragraph", content: [{ type: "text", text: "Buy milk" }] }],
+    });
+
+    expect(activeTab().items[0].content).toEqual({
+      type: "doc",
+      content: [{ type: "paragraph", content: [{ type: "text", text: "Buy milk" }] }],
+    });
+  });
+
   it("marks archive entries orphaned when their tab is deleted", () => {
     useNotesStore.getState().createItem("below");
     const tab = activeTab();

@@ -18,7 +18,9 @@ export function ItemList() {
       {!activeTab || activeTab.items.length === 0 ? (
         <p className="empty-state">Press o to add an item</p>
       ) : (
-        activeTab.items.map((item, index) => <Item focused={index === cursorIndex} item={item} key={item.id} />)
+        activeTab.items.map((item, index) => (
+          <Item focused={index === cursorIndex} index={index} item={item} key={item.id} tabId={activeTab.id} />
+        ))
       )}
       {activeTab && activeTab.items.length === itemLimit ? <p className="limit-row">limit reached</p> : null}
       {archivedCount > 0 ? (

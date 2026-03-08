@@ -13,6 +13,11 @@ export function useKeymap({ settingsOpen, setSettingsOpen }: KeymapOptions) {
     const handleKeyDown = (event: KeyboardEvent) => {
       const store = useNotesStore.getState();
 
+      if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+        handleCheckItem(event);
+        return;
+      }
+
       if (store.mode !== "nav") {
         return;
       }
@@ -63,13 +68,18 @@ function handleCommandKey(event: KeyboardEvent, setSettingsOpen: (open: boolean)
   }
 
   if (event.key === "Enter") {
-    const tab = store.tabs.find((entry) => entry.id === store.activeTabId);
-    const item = tab?.items[store.cursorIndex];
+    handleCheckItem(event);
+  }
+}
 
-    if (tab && item) {
-      event.preventDefault();
-      store.checkItem(tab.id, item.id);
-    }
+function handleCheckItem(event: KeyboardEvent) {
+  const store = useNotesStore.getState();
+  const tab = store.tabs.find((entry) => entry.id === store.activeTabId);
+  const item = tab?.items[store.cursorIndex];
+
+  if (tab && item) {
+    event.preventDefault();
+    store.checkItem(tab.id, item.id);
   }
 }
 
