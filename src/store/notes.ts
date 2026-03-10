@@ -16,6 +16,7 @@ type NotesStore = AppState & {
   createTab: () => void;
   deleteTab: (id: string) => void;
   setActiveTab: (id: string) => void;
+  setEditingTabId: (id: string | null) => void;
   reorderTab: (id: string, direction: "left" | "right") => void;
   updateTabTitle: (id: string, title: string) => void;
   createItem: (position: "above" | "below") => void;
@@ -87,6 +88,7 @@ export const useNotesStore = create<NotesStore>((set, get) => ({
 
     set({ activeTabId: id, cursorIndex: cursorForTab(tab) });
   },
+  setEditingTabId: (editingTabId) => set({ editingTabId }),
   reorderTab: (id, direction) => {
     commit(set, get, (state) => {
       const index = state.tabs.findIndex((tab) => tab.id === id);

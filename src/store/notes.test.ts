@@ -40,6 +40,18 @@ describe("notes store", () => {
     expect(state.cursorIndex).toBe(-1);
   });
 
+  it("normalizes tab titles on update", () => {
+    const tabId = useNotesStore.getState().activeTabId;
+
+    useNotesStore.getState().updateTabTitle(tabId, "  A very long tab title that should be capped at forty characters  ");
+
+    expect(activeTab().title).toBe("A very long tab title that should be cap");
+
+    useNotesStore.getState().updateTabTitle(tabId, "   ");
+
+    expect(activeTab().title).toBe("Untitled");
+  });
+
   it("creates items around the cursor and respects the item limit", () => {
     useSettingsStore.setState({ itemLimit: 2 });
 
