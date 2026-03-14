@@ -1,7 +1,9 @@
 mod commands;
+mod shortcuts;
 mod window_state;
 
 use commands::{get_app_version, open_url, set_activation_policy, update_global_shortcut};
+use shortcuts::register_toggle_shortcut;
 use tauri::{Manager, WindowEvent};
 use tauri_plugin_global_shortcut::ShortcutState;
 use window_state::{restore_window_position, save_window_position};
@@ -39,6 +41,7 @@ pub fn run() {
         ])
         .setup(|app| {
             restore_window_position(app.handle());
+            register_toggle_shortcut(app.handle());
             Ok(())
         })
         .on_window_event(|window, event| {
