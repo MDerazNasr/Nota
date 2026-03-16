@@ -155,6 +155,7 @@ input {
   position: relative;
   display: flex;
   align-items: stretch;
+  max-width: 148px;
 }
 
 .tab-title-input {
@@ -184,6 +185,18 @@ input {
 
 .tab-pill.active {
   border-bottom-color: var(--accent);
+  color: var(--text-primary);
+}
+
+.tab-delete {
+  width: 20px;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.tab-delete:hover {
   color: var(--text-primary);
 }
 
@@ -246,12 +259,23 @@ input {
   background: var(--accent-muted);
 }
 
+.item-row.selected {
+  background: var(--surface-hover);
+}
+
 .item-check {
   width: 12px;
   height: 12px;
   margin-top: 2px;
+  padding: 0;
+  background: transparent;
   border: 1px solid var(--text-muted);
   border-radius: 50%;
+}
+
+.item-row.selected .item-check {
+  border-color: var(--accent);
+  background: var(--accent);
 }
 
 .item-row[data-state="done"] {

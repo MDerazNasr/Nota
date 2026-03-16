@@ -39,6 +39,7 @@ export type ShortcutMap = {
   newTab: string;
   openSettings: string;
   checkItem: string;
+  renameTab: string;
 };
 
 export type WindowPosition = {

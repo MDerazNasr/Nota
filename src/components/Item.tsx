@@ -10,14 +10,18 @@ type ItemProps = {
   item: ItemModel;
   focused: boolean;
   index: number;
+  selected: boolean;
   tabId: string;
 };
 
-export function Item({ focused, index, item, tabId }: ItemProps) {
+export function Item({ focused, index, item, selected, tabId }: ItemProps) {
   const mode = useNotesStore((state) => state.mode);
   const setCursorIndex = useNotesStore((state) => state.setCursorIndex);
   const setMode = useNotesStore((state) => state.setMode);
+  const selectedItemIds = useNotesStore((state) => state.selectedItemIds);
   const checkItem = useNotesStore((state) => state.checkItem);
+  const setSelectedItemIds = useNotesStore((state) => state.setSelectedItemIds);
+  const toggleItemSelection = useNotesStore((state) => state.toggleItemSelection);
   const updateItemContent = useNotesStore((state) => state.updateItemContent);
   const editable = focused && mode === "edit";
   const editor = useEditor({
@@ -76,15 +80,40 @@ export function Item({ focused, index, item, tabId }: ItemProps) {
 
   return (
     <article
-      className={focused ? "item-row focused" : "item-row"}
+      className={rowClassName(focused, selected)}
       data-state={item.state}
-      onClick={() => {
+      draggable
+      onClick={(event) => {
+        if (event.metaKey || event.ctrlKey || event.shiftKey) {
+          toggleItemSelection(item.id);
+          return;
+        }
+
         setCursorIndex(index);
+        setSelectedItemIds([]);
         setMode("edit");
       }}
+      onDragStart={(event) => {
+        const draggedIds = selectedItemIds.includes(item.id) ? selectedItemIds : [item.id];
+        setSelectedItemIds(draggedIds);
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData("application/x-nota-items", JSON.stringify(draggedIds));
+      }}
     >
-      <span className="item-check" aria-hidden="true" />
+      <button
+        className="item-check"
+        type="button"
+        aria-label={selected ? "Deselect item" : "Select item"}
+        onClick={(event) => {
+          event.stopPropagation();
+          toggleItemSelection(item.id);
+        }}
+      />
       <EditorContent editor={editor} />
     </article>
   );
+}
+
+function rowClassName(focused: boolean, selected: boolean) {
+  return ["item-row", focused ? "focused" : "", selected ? "selected" : ""].filter(Boolean).join(" ");
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatShortcut } from "./shortcuts";
+import { displayShortcut, formatShortcut } from "./shortcuts";
 
 describe("formatShortcut", () => {
   it("formats modified letter shortcuts", () => {
@@ -16,5 +16,10 @@ describe("formatShortcut", () => {
     expect(formatShortcut({ altKey: true, ctrlKey: false, key: " ", metaKey: false, shiftKey: false })).toBe(
       "Alt+Space",
     );
+  });
+
+  it("renders stored shortcuts for display", () => {
+    expect(displayShortcut("CommandOrControl+Shift+N")).toBe("Cmd + Shift + N");
+    expect(displayShortcut("")).toBe("Disabled");
   });
 });
