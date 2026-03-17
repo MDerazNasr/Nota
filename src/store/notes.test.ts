@@ -140,6 +140,21 @@ describe("notes store", () => {
     expect(next.activeTabId).toBe(targetTab.id);
     expect(next.selectedItemIds).toEqual([]);
   });
+
+  it("moves explicit item ids without relying on selected state", () => {
+    useNotesStore.getState().createItem("below");
+    useNotesStore.getState().setMode("nav");
+    useNotesStore.getState().createTab();
+
+    const state = useNotesStore.getState();
+    const sourceItem = state.tabs[0].items[0];
+    const targetTab = state.tabs[1];
+
+    useNotesStore.getState().moveItemsToTab([sourceItem.id], targetTab.id);
+
+    expect(useNotesStore.getState().tabs[0].items).toEqual([]);
+    expect(useNotesStore.getState().tabs[1].items[0].id).toBe(sourceItem.id);
+  });
 });
 
 function resetNotesState(state: AppState) {

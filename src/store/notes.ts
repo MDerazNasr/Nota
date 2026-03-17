@@ -23,6 +23,7 @@ type NotesStore = AppState & {
   createItem: (position: "above" | "below") => void;
   updateItemContent: (tabId: string, itemId: string, content: JSONContent) => void;
   deleteItem: (tabId: string, itemId: string) => void;
+  moveItemsToTab: (itemIds: string[], targetTabId: string) => void;
   moveSelectedItemsToTab: (targetTabId: string) => void;
   setSelectedItemIds: (itemIds: string[]) => void;
   toggleItemSelection: (itemId: string) => void;
@@ -151,47 +152,11 @@ export const useNotesStore = create<NotesStore>((set, get) => ({
   deleteItem: (tabId, itemId) => {
     commit(set, get, (state) => removeItemState(state, tabId, itemId));
   },
+  moveItemsToTab: (itemIds, targetTabId) => {
+    commit(set, get, (state) => buildMoveItemsState(state, itemIds, targetTabId));
+  },
   moveSelectedItemsToTab: (targetTabId) => {
-    commit(set, get, (state) => {
-      const targetTab = state.tabs.find((tab) => tab.id === targetTabId);
-      const selected = new Set(state.selectedItemIds);
-
-      if (!targetTab || selected.size === 0) {
-        return {};
-      }
-
-      const itemLimit = useSettingsStore.getState().itemLimit;
-      const capacity = Math.max(0, itemLimit - targetTab.items.length);
-      const movableItems = state.tabs.flatMap((tab) => tab.items.filter((item) => selected.has(item.id))).slice(0, capacity);
-
-      if (movableItems.length === 0) {
-        return {};
-      }
-
-      const movedIds = new Set(movableItems.map((item) => item.id));
-      const insertionIndex = targetTab.items.length;
-      const tabs = state.tabs.map((tab) => {
-        if (tab.id === targetTabId) {
-          return {
-            ...tab,
-            items: [...tab.items.filter((item) => !movedIds.has(item.id)), ...movableItems],
-          };
-        }
-
-        return {
-          ...tab,
-          items: tab.items.filter((item) => !movedIds.has(item.id)),
-        };
-      });
-
-      return {
-        tabs,
-        activeTabId: targetTabId,
-        cursorIndex: insertionIndex,
-        selectedItemIds: [],
-        mode: "nav",
-      };
-    });
+    commit(set, get, (state) => buildMoveItemsState(state, state.selectedItemIds, targetTabId));
   },
   setSelectedItemIds: (selectedItemIds) => set({ selectedItemIds }),
   toggleItemSelection: (itemId) => {
@@ -370,6 +335,56 @@ function removeItemState(state: NotesStore, tabId: string, itemId: string): Part
     tabs,
     cursorIndex: clampCursor(index, updatedTab),
     selectedItemIds: state.selectedItemIds.filter((selectedId) => selectedId !== itemId),
+  };
+}
+
+function buildMoveItemsState(state: NotesStore, itemIds: string[], targetTabId: string): Partial<NotesStore> {
+  const targetTab = state.tabs.find((tab) => tab.id === targetTabId);
+  const selected = new Set(itemIds);
+
+  if (!targetTab || selected.size === 0) {
+    return {};
+  }
+
+  const movableItems = state.tabs.flatMap((tab) => tab.items.filter((item) => selected.has(item.id)));
+
+  if (movableItems.length === 0 || movableItems.every((item) => targetTab.items.some((target) => target.id === item.id))) {
+    return { selectedItemIds: [], mode: "nav" };
+  }
+
+  const itemLimit = useSettingsStore.getState().itemLimit;
+  const targetSelectedCount = targetTab.items.filter((item) => selected.has(item.id)).length;
+  const capacity = Math.max(0, itemLimit - targetTab.items.length + targetSelectedCount);
+  const itemsToMove = movableItems.slice(0, capacity);
+
+  if (itemsToMove.length === 0) {
+    return {};
+  }
+
+  const movedIds = new Set(itemsToMove.map((item) => item.id));
+  const insertionIndex = targetTab.items.filter((item) => !movedIds.has(item.id)).length;
+  const tabs = state.tabs.map((tab) => {
+    const remainingItems = tab.items.filter((item) => !movedIds.has(item.id));
+
+    if (tab.id === targetTabId) {
+      return {
+        ...tab,
+        items: [...remainingItems, ...itemsToMove],
+      };
+    }
+
+    return {
+      ...tab,
+      items: remainingItems,
+    };
+  });
+
+  return {
+    tabs,
+    activeTabId: targetTabId,
+    cursorIndex: insertionIndex,
+    selectedItemIds: [],
+    mode: "nav",
   };
 }
 
