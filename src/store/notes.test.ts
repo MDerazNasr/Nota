@@ -155,6 +155,60 @@ describe("notes store", () => {
     expect(useNotesStore.getState().tabs[0].items).toEqual([]);
     expect(useNotesStore.getState().tabs[1].items[0].id).toBe(sourceItem.id);
   });
+
+  it("restores orphaned archived items to the current tab", () => {
+    useNotesStore.getState().createItem("below");
+    const sourceTab = activeTab();
+    const itemId = sourceTab.items[0].id;
+
+    useNotesStore.getState().checkItem(sourceTab.id, itemId);
+    useNotesStore.getState().deleteTab(sourceTab.id);
+    const currentTabId = useNotesStore.getState().activeTabId;
+
+    useNotesStore.getState().restoreItem(itemId, "current");
+
+    const state = useNotesStore.getState();
+
+    expect(state.activeTabId).toBe(currentTabId);
+    expect(activeTab().items[0].id).toBe(itemId);
+    expect(state.archive).toEqual([]);
+  });
+
+  it("restores orphaned archived items to a new tab name", () => {
+    useNotesStore.getState().createItem("below");
+    const sourceTab = activeTab();
+    const itemId = sourceTab.items[0].id;
+
+    useNotesStore.getState().checkItem(sourceTab.id, itemId);
+    useNotesStore.getState().deleteTab(sourceTab.id);
+    useNotesStore.getState().restoreItem(itemId, "Recovered");
+
+    const state = useNotesStore.getState();
+    const restoredTab = state.tabs.find((tab) => tab.title === "Recovered");
+
+    expect(restoredTab?.items[0].id).toBe(itemId);
+    expect(state.activeTabId).toBe(restoredTab?.id);
+    expect(state.archive).toEqual([]);
+  });
+
+  it("deletes archived items and clears the archive", () => {
+    useNotesStore.getState().createItem("below");
+    useNotesStore.getState().setMode("nav");
+    useNotesStore.getState().createItem("below");
+    const tab = activeTab();
+    const ids = tab.items.map((item) => item.id);
+
+    useNotesStore.getState().checkItem(tab.id, ids[0]);
+    useNotesStore.getState().checkItem(tab.id, ids[1]);
+
+    useNotesStore.getState().deleteArchivedItem(ids[0]);
+
+    expect(useNotesStore.getState().archive.map((item) => item.id)).toEqual([ids[1]]);
+
+    useNotesStore.getState().clearArchive();
+
+    expect(useNotesStore.getState().archive).toEqual([]);
+  });
 });
 
 function resetNotesState(state: AppState) {
