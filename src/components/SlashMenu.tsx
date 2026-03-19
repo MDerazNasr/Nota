@@ -1,15 +1,25 @@
+import { createPortal } from "react-dom";
+
 export type SlashCommand = "bold" | "italic" | "underline" | "link";
 
 type SlashMenuProps = {
   items: SlashCommand[];
+  position: { left: number; top: number };
   selectedIndex: number;
   onSelect: (command: SlashCommand) => void;
   onDismiss: () => void;
 };
 
-export function SlashMenu({ items, selectedIndex, onSelect, onDismiss }: SlashMenuProps) {
-  return (
-    <div className="slash-menu" role="menu" onKeyDown={(event) => event.key === "Escape" && onDismiss()}>
+const DESCRIPTIONS: Record<SlashCommand, string> = {
+  bold: "Bold text",
+  italic: "Italic text",
+  underline: "Underline text",
+  link: "Insert hyperlink",
+};
+
+export function SlashMenu({ items, position, selectedIndex, onSelect, onDismiss }: SlashMenuProps) {
+  return createPortal(
+    <div className="slash-menu" role="menu" style={position} onKeyDown={(event) => event.key === "Escape" && onDismiss()}>
       {items.map((item, index) => (
         <button
           className={index === selectedIndex ? "slash-menu-item active" : "slash-menu-item"}
@@ -17,9 +27,11 @@ export function SlashMenu({ items, selectedIndex, onSelect, onDismiss }: SlashMe
           type="button"
           onClick={() => onSelect(item)}
         >
-          /{item}
+          <span>/{item}</span>
+          <small>{DESCRIPTIONS[item]}</small>
         </button>
       ))}
-    </div>
+    </div>,
+    document.body,
   );
 }
