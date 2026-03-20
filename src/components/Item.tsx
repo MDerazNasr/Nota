@@ -1,20 +1,27 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Editor } from "@tiptap/core";
+import { invoke } from "@tauri-apps/api/core";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
 import Underline from "@tiptap/extension-underline";
 import { GripVertical } from "lucide-react";
 import { createItemDragPayload, ITEM_DRAG_MIME } from "../lib/itemDrag";
+import { normalizeHref } from "../lib/links";
 import { filterSlashCommands, nextSlashIndex } from "../lib/slashCommands";
 import type { Item as ItemModel } from "../lib/types";
 import { useNotesStore } from "../store/notes";
+import { LinkPopup } from "./LinkPopup";
 import { SlashMenu, type SlashCommand } from "./SlashMenu";
 
 type SlashState = {
   query: string;
   range: { from: number; to: number };
   selectedIndex: number;
+  position: { left: number; top: number };
+};
+
+type LinkPopupState = {
   position: { left: number; top: number };
 };
 
@@ -36,6 +43,7 @@ export function Item({ focused, index, item, selected, tabId }: ItemProps) {
   const toggleItemSelection = useNotesStore((state) => state.toggleItemSelection);
   const updateItemContent = useNotesStore((state) => state.updateItemContent);
   const [slashState, setSlashState] = useState<SlashState | null>(null);
+  const [linkPopup, setLinkPopup] = useState<LinkPopupState | null>(null);
   const slashItems = useMemo(() => filterSlashCommands(slashState?.query ?? ""), [slashState?.query]);
   const editable = focused && mode === "edit";
   const editor = useEditor({
@@ -61,7 +69,7 @@ export function Item({ focused, index, item, selected, tabId }: ItemProps) {
       handleKeyDown: (view, event) => {
         if (slashState) {
           const handled = handleSlashKey(event, slashState, slashItems, setSlashState, (command) => {
-            applySlashCommand(editor, slashState.range, command);
+            applySlashCommand(editor, slashState, command, setLinkPopup);
           }, () => dismissSlashMenu(editor, slashState.range, setSlashState));
 
           if (handled) {
@@ -97,6 +105,17 @@ export function Item({ focused, index, item, selected, tabId }: ItemProps) {
         if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "u") {
           event.preventDefault();
           editor?.chain().focus().toggleUnderline().run();
+          return true;
+        }
+
+        return false;
+      },
+      handleClick: (_view, _pos, event) => {
+        const target = event.target;
+
+        if (target instanceof HTMLAnchorElement) {
+          event.preventDefault();
+          void invoke("open_url", { url: target.href });
           return true;
         }
 
@@ -171,7 +190,17 @@ export function Item({ focused, index, item, selected, tabId }: ItemProps) {
           position={slashState.position}
           selectedIndex={Math.min(slashState.selectedIndex, slashItems.length - 1)}
           onDismiss={() => dismissSlashMenu(editor, slashState.range, setSlashState)}
-          onSelect={(command) => applySlashCommand(editor, slashState.range, command)}
+          onSelect={(command) => applySlashCommand(editor, slashState, command, setLinkPopup)}
+        />
+      ) : null}
+      {linkPopup ? (
+        <LinkPopup
+          position={linkPopup.position}
+          onCancel={() => setLinkPopup(null)}
+          onSubmit={(label, url) => {
+            insertLink(editor, label, url);
+            setLinkPopup(null);
+          }}
         />
       ) : null}
     </article>
@@ -247,12 +276,23 @@ function handleSlashKey(
   return false;
 }
 
-function applySlashCommand(editor: Editor | null, range: SlashState["range"], command: SlashCommand) {
+function applySlashCommand(
+  editor: Editor | null,
+  slashState: SlashState,
+  command: SlashCommand,
+  setLinkPopup: (state: LinkPopupState | null) => void,
+) {
   if (!editor) {
     return;
   }
 
-  const chain = editor.chain().focus().deleteRange(range);
+  const chain = editor.chain().focus().deleteRange(slashState.range);
+
+  if (command === "link") {
+    chain.run();
+    setLinkPopup({ position: slashState.position });
+    return;
+  }
 
   if (command === "bold") {
     chain.toggleBold().run();
@@ -261,6 +301,18 @@ function applySlashCommand(editor: Editor | null, range: SlashState["range"], co
   } else if (command === "underline") {
     chain.toggleUnderline().run();
   }
+}
+
+function insertLink(editor: Editor | null, label: string, url: string) {
+  editor
+    ?.chain()
+    .focus()
+    .insertContent({
+      type: "text",
+      text: label,
+      marks: [{ type: "link", attrs: { href: normalizeHref(url) } }],
+    })
+    .run();
 }
 
 function dismissSlashMenu(editor: Editor | null, range: SlashState["range"], setSlashState: (state: SlashState | null) => void) {
