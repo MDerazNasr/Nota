@@ -25,6 +25,7 @@ export function AppearanceTab() {
           {Object.entries(THEMES).map(([key, definition]) => (
             <button
               className={theme === key ? "theme-swatch active" : "theme-swatch"}
+              data-settings-focusable
               key={key}
               type="button"
               title={definition.name}
@@ -39,7 +40,11 @@ export function AppearanceTab() {
         </div>
       </SettingRow>
       <SettingRow label="Font" resetKey="font">
-        <select value={font} onChange={(event) => setFont(event.currentTarget.value as FontOption)}>
+        <select
+          data-settings-focusable
+          value={font}
+          onChange={(event) => setFont(event.currentTarget.value as FontOption)}
+        >
           {FONTS.map((option) => (
             <option key={option} value={option}>
               {option}
@@ -73,7 +78,13 @@ function SettingRow({ children, label, resetKey }: SettingRowProps) {
     <div className="setting-row">
       <label>{label}</label>
       <div className="setting-control">{children}</div>
-      <button className="reset-button" type="button" aria-label={`Reset ${label}`} onClick={() => resetSetting(resetKey)}>
+      <button
+        className="reset-button"
+        data-settings-focusable
+        type="button"
+        aria-label={`Reset ${label}`}
+        onClick={() => resetSetting(resetKey)}
+      >
         <RotateCcw size={14} strokeWidth={1.75} />
       </button>
     </div>
@@ -91,6 +102,7 @@ function Slider({ max, min, onChange, value }: SliderProps) {
   return (
     <div className="slider-control">
       <input
+        data-settings-focusable
         max={max}
         min={min}
         step={1}

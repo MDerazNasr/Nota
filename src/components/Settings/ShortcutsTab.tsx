@@ -97,7 +97,12 @@ function ToggleRow({ checked, label, onChange }: ToggleRowProps) {
   return (
     <label className="toggle-row">
       <span>{label}</span>
-      <input type="checkbox" checked={checked} onChange={(event) => void onChange(event.currentTarget.checked)} />
+      <input
+        data-settings-focusable
+        type="checkbox"
+        checked={checked}
+        onChange={(event) => void onChange(event.currentTarget.checked)}
+      />
     </label>
   );
 }
@@ -126,6 +131,8 @@ function HotkeyRow({ capturing, label, onCancel, onCapture, onSave, value }: Hot
       <button
         ref={captureRef}
         className={capturing ? "hotkey-capture active" : "hotkey-capture"}
+        data-hotkey-capturing={capturing ? "true" : undefined}
+        data-settings-focusable
         type="button"
         title={value || "Disabled"}
         onClick={onCapture}
