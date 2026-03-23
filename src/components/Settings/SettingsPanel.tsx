@@ -75,6 +75,7 @@ export function SettingsPanel({ onClose, open }: SettingsPanelProps) {
       ref={panelRef}
       className={open ? "overlay-panel" : "overlay-panel overlay-panel-hidden"}
       aria-label="Settings"
+      aria-hidden={!open}
     >
       <header className="panel-header">
         <h2>Settings</h2>

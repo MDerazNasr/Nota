@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { ITEM_DRAG_MIME, parseItemDragPayload } from "../lib/itemDrag";
 import { useNotesStore } from "../store/notes";
 
 export function TabBar() {
@@ -8,13 +7,11 @@ export function TabBar() {
   const editingTabId = useNotesStore((state) => state.editingTabId);
   const createTab = useNotesStore((state) => state.createTab);
   const deleteTab = useNotesStore((state) => state.deleteTab);
-  const moveItemsToTab = useNotesStore((state) => state.moveItemsToTab);
-  const moveSelectedItemsToTab = useNotesStore((state) => state.moveSelectedItemsToTab);
+  const dropTargetTabId = useNotesStore((state) => state.dropTargetTabId);
   const setActiveTab = useNotesStore((state) => state.setActiveTab);
   const setEditingTabId = useNotesStore((state) => state.setEditingTabId);
   const updateTabTitle = useNotesStore((state) => state.updateTabTitle);
   const [contextTabId, setContextTabId] = useState<string | null>(null);
-  const [dropTabId, setDropTabId] = useState<string | null>(null);
   const [draftTitle, setDraftTitle] = useState("");
 
   useEffect(() => {
@@ -30,28 +27,9 @@ export function TabBar() {
     <nav className="tab-bar" aria-label="Tabs" onMouseLeave={() => setContextTabId(null)}>
       {tabs.map((tab) => (
         <div
-          className={dropTabId === tab.id ? "tab-wrap drop-target" : "tab-wrap"}
+          className={dropTargetTabId === tab.id ? "tab-wrap drop-target" : "tab-wrap"}
+          data-tab-id={tab.id}
           key={tab.id}
-          onDragLeave={(event) => {
-            if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
-              setDropTabId(null);
-            }
-          }}
-          onDragOver={(event) => {
-            event.preventDefault();
-            setDropTabId(tab.id);
-            event.dataTransfer.dropEffect = "move";
-          }}
-          onDrop={(event) => {
-            event.preventDefault();
-            const itemIds = parseItemDragPayload(event.dataTransfer.getData(ITEM_DRAG_MIME));
-            if (itemIds.length > 0) {
-              moveItemsToTab(itemIds, tab.id);
-            } else {
-              moveSelectedItemsToTab(tab.id);
-            }
-            setDropTabId(null);
-          }}
         >
           {editingTabId === tab.id ? (
             <TabTitleInput

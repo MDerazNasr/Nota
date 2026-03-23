@@ -85,7 +85,11 @@ export function ArchivePanel() {
   ]);
 
   return (
-    <aside className={archiveOpen ? "overlay-panel" : "overlay-panel overlay-panel-hidden"} aria-label="Archive">
+    <aside
+      className={archiveOpen ? "overlay-panel" : "overlay-panel overlay-panel-hidden"}
+      aria-label="Archive"
+      aria-hidden={!archiveOpen}
+    >
       <header className="panel-header">
         <h2>Archive</h2>
         <button className="icon-button" type="button" aria-label="Close archive" onClick={() => setArchiveOpen(false)}>

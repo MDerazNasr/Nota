@@ -12,6 +12,8 @@ type NotesStore = AppState & {
   archiveOpen: boolean;
   editingTabId: string | null;
   selectedItemIds: string[];
+  draggingItemIds: string[];
+  dropTargetTabId: string | null;
   hydrated: boolean;
   hydrateNotes: () => Promise<void>;
   createTab: () => void;
@@ -28,6 +30,10 @@ type NotesStore = AppState & {
   setSelectedItemIds: (itemIds: string[]) => void;
   toggleItemSelection: (itemId: string) => void;
   clearSelectedItems: () => void;
+  startItemDrag: (itemIds: string[]) => void;
+  setDropTargetTabId: (tabId: string | null) => void;
+  finishItemDrag: (targetTabId: string | null) => void;
+  cancelItemDrag: () => void;
   checkItem: (tabId: string, itemId: string) => void;
   restoreItem: (archivedId: string, destination: "original" | "current" | string) => void;
   deleteArchivedItem: (archivedId: string) => void;
@@ -47,6 +53,8 @@ export const useNotesStore = create<NotesStore>((set, get) => ({
   archiveOpen: false,
   editingTabId: null,
   selectedItemIds: [],
+  draggingItemIds: [],
+  dropTargetTabId: null,
   hydrated: false,
   hydrateNotes: async () => {
     const state = await loadNotes();
@@ -173,6 +181,21 @@ export const useNotesStore = create<NotesStore>((set, get) => ({
     });
   },
   clearSelectedItems: () => set({ selectedItemIds: [] }),
+  startItemDrag: (draggingItemIds) => set({ draggingItemIds, dropTargetTabId: null, mode: "nav" }),
+  setDropTargetTabId: (dropTargetTabId) => set({ dropTargetTabId }),
+  finishItemDrag: (targetTabId) => {
+    if (!targetTabId) {
+      set({ draggingItemIds: [], dropTargetTabId: null });
+      return;
+    }
+
+    commit(set, get, (state) => ({
+      ...buildMoveItemsState(state, state.draggingItemIds, targetTabId),
+      draggingItemIds: [],
+      dropTargetTabId: null,
+    }));
+  },
+  cancelItemDrag: () => set({ draggingItemIds: [], dropTargetTabId: null }),
   checkItem: (tabId, itemId) => {
     commit(set, get, (state) => {
       const tab = state.tabs.find((entry) => entry.id === tabId);
