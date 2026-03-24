@@ -27,8 +27,8 @@ export function SettingsPanel({ onClose, open }: SettingsPanelProps) {
       return;
     }
 
-    const focusables = getSettingsFocusables(panelRef.current);
-    focusables[focusIndex]?.focus();
+    const rows = getSettingsRows(panelRef.current);
+    rows[focusIndex]?.focus();
   }, [activeTab, focusIndex, open]);
 
   useEffect(() => {
@@ -41,14 +41,14 @@ export function SettingsPanel({ onClose, open }: SettingsPanelProps) {
         return;
       }
 
-      const focusables = getSettingsFocusables(panelRef.current);
+      const rows = getSettingsRows(panelRef.current);
 
       if (event.key === "j") {
         event.preventDefault();
-        setFocusIndex((current) => moveSettingsFocus(current, 1, focusables.length));
+        setFocusIndex((current) => moveSettingsFocus(current, 1, rows.length));
       } else if (event.key === "k") {
         event.preventDefault();
-        setFocusIndex((current) => moveSettingsFocus(current, -1, focusables.length));
+        setFocusIndex((current) => moveSettingsFocus(current, -1, rows.length));
       } else if (event.key === "h") {
         event.preventDefault();
         setActiveTab((current) => moveSettingsTab(current, -1));
@@ -59,7 +59,7 @@ export function SettingsPanel({ onClose, open }: SettingsPanelProps) {
         setFocusIndex(0);
       } else if (event.key === "Enter") {
         event.preventDefault();
-        activateSettingsControl(focusables[focusIndex]);
+        activateSettingsRow(rows[focusIndex]);
       } else if (event.key === "Escape") {
         event.preventDefault();
         onClose();
@@ -88,7 +88,10 @@ export function SettingsPanel({ onClose, open }: SettingsPanelProps) {
           type="button"
           role="tab"
           aria-selected={activeTab === "appearance"}
-          onClick={() => setActiveTab("appearance")}
+          onClick={() => {
+            setActiveTab("appearance");
+            setFocusIndex(0);
+          }}
         >
           Appearance
         </button>
@@ -96,11 +99,22 @@ export function SettingsPanel({ onClose, open }: SettingsPanelProps) {
           type="button"
           role="tab"
           aria-selected={activeTab === "shortcuts"}
-          onClick={() => setActiveTab("shortcuts")}
+          onClick={() => {
+            setActiveTab("shortcuts");
+            setFocusIndex(0);
+          }}
         >
           Shortcuts
         </button>
-        <button type="button" role="tab" aria-selected={activeTab === "about"} onClick={() => setActiveTab("about")}>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === "about"}
+          onClick={() => {
+            setActiveTab("about");
+            setFocusIndex(0);
+          }}
+        >
           About
         </button>
       </div>
@@ -111,29 +125,49 @@ export function SettingsPanel({ onClose, open }: SettingsPanelProps) {
   );
 }
 
-function getSettingsFocusables(panel: HTMLElement | null) {
+function getSettingsRows(panel: HTMLElement | null) {
   if (!panel) {
     return [];
   }
 
-  return Array.from(panel.querySelectorAll<HTMLElement>("[data-settings-focusable]")).filter(
+  return Array.from(panel.querySelectorAll<HTMLElement>("[data-settings-row]")).filter(
     (element) => !element.hasAttribute("disabled") && element.getClientRects().length > 0,
   );
 }
 
-function activateSettingsControl(element: HTMLElement | undefined) {
-  if (!element) {
+function activateSettingsRow(row: HTMLElement | undefined) {
+  if (!row) {
     return;
   }
 
-  element.focus();
+  if (row.dataset.settingsRow === "theme") {
+    clickNextTheme(row);
+    return;
+  }
 
-  if (element instanceof HTMLButtonElement || isCheckbox(element)) {
-    element.click();
+  const control = row.querySelector<HTMLElement>("[data-settings-primary]");
+
+  if (!control) {
+    return;
+  }
+
+  control.focus();
+
+  if (control instanceof HTMLButtonElement || isCheckbox(control)) {
+    control.click();
+  } else if (control instanceof HTMLSelectElement) {
+    control.click();
   }
 }
 
-function isCheckbox(element: HTMLElement) {
+function clickNextTheme(row: HTMLElement) {
+  const swatches = Array.from(row.querySelectorAll<HTMLButtonElement>(".theme-swatch"));
+  const activeIndex = swatches.findIndex((swatch) => swatch.classList.contains("active"));
+  const next = swatches[(activeIndex + 1 + swatches.length) % swatches.length];
+  next?.click();
+}
+
+function isCheckbox(element: HTMLElement | null) {
   return element instanceof HTMLInputElement && element.type === "checkbox";
 }
 

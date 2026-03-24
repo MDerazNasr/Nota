@@ -95,10 +95,10 @@ type ToggleRowProps = {
 
 function ToggleRow({ checked, label, onChange }: ToggleRowProps) {
   return (
-    <label className="toggle-row">
+    <label className="toggle-row" data-settings-row="toggle" tabIndex={-1}>
       <span>{label}</span>
       <input
-        data-settings-focusable
+        data-settings-primary
         type="checkbox"
         checked={checked}
         onChange={(event) => void onChange(event.currentTarget.checked)}
@@ -126,13 +126,13 @@ function HotkeyRow({ capturing, label, onCancel, onCapture, onSave, value }: Hot
   }, [capturing]);
 
   return (
-    <div className="hotkey-row">
+    <div className="hotkey-row" data-settings-row="hotkey" tabIndex={-1}>
       <span>{label}</span>
       <button
         ref={captureRef}
         className={capturing ? "hotkey-capture active" : "hotkey-capture"}
         data-hotkey-capturing={capturing ? "true" : undefined}
-        data-settings-focusable
+        data-settings-primary
         type="button"
         title={value || "Disabled"}
         onClick={onCapture}

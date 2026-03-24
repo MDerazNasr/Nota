@@ -20,12 +20,11 @@ export function AppearanceTab() {
 
   return (
     <section className="settings-section" aria-label="Appearance settings">
-      <SettingRow label="Theme" resetKey="theme">
+      <SettingRow kind="theme" label="Theme" resetKey="theme">
         <div className="theme-grid">
           {Object.entries(THEMES).map(([key, definition]) => (
             <button
               className={theme === key ? "theme-swatch active" : "theme-swatch"}
-              data-settings-focusable
               key={key}
               type="button"
               title={definition.name}
@@ -41,7 +40,7 @@ export function AppearanceTab() {
       </SettingRow>
       <SettingRow label="Font" resetKey="font">
         <select
-          data-settings-focusable
+          data-settings-primary
           value={font}
           onChange={(event) => setFont(event.currentTarget.value as FontOption)}
         >
@@ -67,20 +66,20 @@ export function AppearanceTab() {
 
 type SettingRowProps = {
   children: ReactNode;
+  kind?: string;
   label: string;
   resetKey: keyof Settings;
 };
 
-function SettingRow({ children, label, resetKey }: SettingRowProps) {
+function SettingRow({ children, kind, label, resetKey }: SettingRowProps) {
   const resetSetting = useSettingsStore((state) => state.resetSetting);
 
   return (
-    <div className="setting-row">
+    <div className="setting-row" data-settings-row={kind ?? "setting"} tabIndex={-1}>
       <label>{label}</label>
       <div className="setting-control">{children}</div>
       <button
         className="reset-button"
-        data-settings-focusable
         type="button"
         aria-label={`Reset ${label}`}
         onClick={() => resetSetting(resetKey)}
@@ -102,7 +101,7 @@ function Slider({ max, min, onChange, value }: SliderProps) {
   return (
     <div className="slider-control">
       <input
-        data-settings-focusable
+        data-settings-primary
         max={max}
         min={min}
         step={1}

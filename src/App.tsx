@@ -32,8 +32,8 @@ function App() {
         <TabBar />
         <ItemList />
       </section>
-      <SettingsPanel open={settingsOpen} onClose={() => setSettingsOpen(false)} />
-      <ArchivePanel />
+      {settingsOpen ? <SettingsPanel open={settingsOpen} onClose={() => setSettingsOpen(false)} /> : null}
+      {!settingsOpen && archiveOpen ? <ArchivePanel /> : null}
     </main>
   );
 }

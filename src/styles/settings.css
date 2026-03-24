@@ -18,8 +18,13 @@
   color: var(--text-primary);
 }
 
-[data-settings-focusable]:focus {
+[data-settings-row]:focus,
+[data-settings-primary]:focus {
   border-color: var(--accent);
+}
+
+[data-settings-row]:focus {
+  background: var(--accent-muted);
 }
 
 .settings-section {

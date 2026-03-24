@@ -269,6 +269,14 @@ input {
   background: var(--surface-hover);
 }
 
+.item-row.drop-before {
+  box-shadow: inset 0 1px 0 var(--accent);
+}
+
+.item-row.drop-after {
+  box-shadow: inset 0 -1px 0 var(--accent);
+}
+
 .item-drag-handle {
   display: grid;
   width: 16px;
