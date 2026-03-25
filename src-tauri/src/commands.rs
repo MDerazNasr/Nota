@@ -1,6 +1,8 @@
-use tauri::AppHandle;
+use tauri::{AppHandle, Manager};
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut};
 use tauri_plugin_shell::ShellExt;
+
+const TRAY_ID: &str = "nota-menu-bar";
 
 #[tauri::command]
 pub fn set_activation_policy(app: AppHandle, show: bool) -> Result<(), String> {
@@ -52,4 +54,51 @@ pub fn open_url(app: AppHandle, url: String) -> Result<(), String> {
 #[tauri::command]
 pub fn get_app_version(app: AppHandle) -> String {
     app.package_info().version.to_string()
+}
+
+#[tauri::command]
+pub fn set_menu_bar_icon(app: AppHandle, show: bool) -> Result<(), String> {
+    #[cfg(desktop)]
+    {
+        use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
+
+        if let Some(tray) = app.tray_by_id(TRAY_ID) {
+            tray.set_visible(show).map_err(|error| error.to_string())?;
+            return Ok(());
+        }
+
+        let handle = app.clone();
+        let tray = TrayIconBuilder::with_id(TRAY_ID)
+            .title("nota")
+            .tooltip("nota")
+            .show_menu_on_left_click(false)
+            .on_tray_icon_event(move |_tray, event| {
+                if let TrayIconEvent::Click {
+                    button: MouseButton::Left,
+                    button_state: MouseButtonState::Up,
+                    ..
+                } = event
+                {
+                    if let Some(window) = handle.get_webview_window("main") {
+                        if window.is_visible().unwrap_or(false) {
+                            let _ = window.hide();
+                        } else {
+                            let _ = window.show();
+                            let _ = window.set_focus();
+                        }
+                    }
+                }
+            })
+            .build(&app)
+            .map_err(|error| error.to_string())?;
+
+        tray.set_visible(show).map_err(|error| error.to_string())?;
+    }
+
+    #[cfg(not(desktop))]
+    {
+        let _ = (app, show);
+    }
+
+    Ok(())
 }

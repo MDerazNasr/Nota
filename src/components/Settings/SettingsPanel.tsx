@@ -60,6 +60,15 @@ export function SettingsPanel({ onClose, open }: SettingsPanelProps) {
       } else if (event.key === "Enter") {
         event.preventDefault();
         activateSettingsRow(rows[focusIndex]);
+      } else if (event.key === " ") {
+        event.preventDefault();
+        activateSettingsRow(rows[focusIndex]);
+      } else if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        adjustSettingsRow(rows[focusIndex], -1);
+      } else if (event.key === "ArrowRight") {
+        event.preventDefault();
+        adjustSettingsRow(rows[focusIndex], 1);
       } else if (event.key === "Escape") {
         event.preventDefault();
         onClose();
@@ -141,7 +150,7 @@ function activateSettingsRow(row: HTMLElement | undefined) {
   }
 
   if (row.dataset.settingsRow === "theme") {
-    clickNextTheme(row);
+    clickTheme(row, 1);
     return;
   }
 
@@ -160,14 +169,42 @@ function activateSettingsRow(row: HTMLElement | undefined) {
   }
 }
 
-function clickNextTheme(row: HTMLElement) {
+function adjustSettingsRow(row: HTMLElement | undefined, offset: -1 | 1) {
+  if (!row) {
+    return;
+  }
+
+  if (row.dataset.settingsRow === "theme") {
+    clickTheme(row, offset);
+    return;
+  }
+
+  const control = row.querySelector<HTMLElement>("[data-settings-primary]");
+
+  if (control instanceof HTMLInputElement && control.type === "range") {
+    const step = Number(control.step || 1);
+    const nextValue = Number(control.value) + step * offset;
+    control.value = String(nextValue);
+    control.dispatchEvent(new Event("input", { bubbles: true }));
+    control.dispatchEvent(new Event("change", { bubbles: true }));
+  } else if (control instanceof HTMLSelectElement) {
+    const nextIndex = Math.min(Math.max(control.selectedIndex + offset, 0), control.options.length - 1);
+    control.selectedIndex = nextIndex;
+    control.dispatchEvent(new Event("change", { bubbles: true }));
+  } else if (isCheckbox(control)) {
+    control.checked = offset > 0;
+    control.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+}
+
+function clickTheme(row: HTMLElement, offset: -1 | 1) {
   const swatches = Array.from(row.querySelectorAll<HTMLButtonElement>(".theme-swatch"));
   const activeIndex = swatches.findIndex((swatch) => swatch.classList.contains("active"));
-  const next = swatches[(activeIndex + 1 + swatches.length) % swatches.length];
+  const next = swatches[(activeIndex + offset + swatches.length) % swatches.length];
   next?.click();
 }
 
-function isCheckbox(element: HTMLElement | null) {
+function isCheckbox(element: HTMLElement | null): element is HTMLInputElement {
   return element instanceof HTMLInputElement && element.type === "checkbox";
 }
 
@@ -176,5 +213,5 @@ function shouldIgnoreSettingsKey(target: EventTarget | null) {
     return false;
   }
 
-  return target.closest("[data-hotkey-capturing='true']") !== null;
+  return target.closest("[data-hotkey-capturing='true'], select, input") !== null;
 }

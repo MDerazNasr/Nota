@@ -4,7 +4,18 @@ import { THEMES } from "../../lib/themes";
 import type { FontOption, Settings } from "../../lib/types";
 import { useSettingsStore } from "../../store/settings";
 
-const FONTS: FontOption[] = ["JetBrains Mono", "Fira Code", "IBM Plex Mono", "Geist Mono"];
+const FONTS: FontOption[] = [
+  "JetBrains Mono",
+  "Fira Code",
+  "IBM Plex Mono",
+  "Geist Mono",
+  "SF Mono",
+  "Menlo",
+  "Monaco",
+  "Cascadia Code",
+  "Source Code Pro",
+  "Recursive Mono",
+];
 
 export function AppearanceTab() {
   const theme = useSettingsStore((state) => state.theme);

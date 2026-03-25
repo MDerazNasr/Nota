@@ -16,6 +16,7 @@ type SettingsStore = Settings & {
   setItemLimit: (itemLimit: number) => void;
   setOpenOnStartup: (openOnStartup: boolean) => void;
   setShowInDock: (showInDock: boolean) => void;
+  setShowInMenuBar: (showInMenuBar: boolean) => void;
   updateShortcut: (key: keyof ShortcutMap, value: string) => void;
   resetSetting: (key: SettingsKey) => void;
 };
@@ -62,6 +63,10 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
     set({ showInDock });
     queueSave(get());
   },
+  setShowInMenuBar: (showInMenuBar) => {
+    set({ showInMenuBar });
+    queueSave(get());
+  },
   updateShortcut: (key, value) => {
     set((state) => ({
       shortcuts: {
@@ -98,6 +103,7 @@ function toSettings(state: Settings): Settings {
     itemLimit: state.itemLimit,
     openOnStartup: state.openOnStartup,
     showInDock: state.showInDock,
+    showInMenuBar: state.showInMenuBar,
     shortcuts: state.shortcuts,
     windowPosition: state.windowPosition,
   };

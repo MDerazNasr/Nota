@@ -17,9 +17,11 @@ const HOTKEY_LABELS: Record<keyof ShortcutMap, string> = {
 export function ShortcutsTab() {
   const openOnStartup = useSettingsStore((state) => state.openOnStartup);
   const showInDock = useSettingsStore((state) => state.showInDock);
+  const showInMenuBar = useSettingsStore((state) => state.showInMenuBar);
   const shortcuts = useSettingsStore((state) => state.shortcuts);
   const setOpenOnStartup = useSettingsStore((state) => state.setOpenOnStartup);
   const setShowInDock = useSettingsStore((state) => state.setShowInDock);
+  const setShowInMenuBar = useSettingsStore((state) => state.setShowInMenuBar);
   const updateShortcut = useSettingsStore((state) => state.updateShortcut);
   const [captureKey, setCaptureKey] = useState<keyof ShortcutMap | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -48,6 +50,16 @@ export function ShortcutsTab() {
     }
   };
 
+  const toggleMenuBar = async (checked: boolean) => {
+    setShowInMenuBar(checked);
+    try {
+      await invoke("set_menu_bar_icon", { show: checked });
+      setError(null);
+    } catch {
+      setError("Could not update menu bar visibility.");
+    }
+  };
+
   const saveShortcut = async (key: keyof ShortcutMap, value: string) => {
     const oldValue = shortcuts[key];
     updateShortcut(key, value);
@@ -70,6 +82,7 @@ export function ShortcutsTab() {
       <div className="setting-group-label">Behavior</div>
       <ToggleRow checked={openOnStartup} label="Open on startup" onChange={toggleStartup} />
       <ToggleRow checked={showInDock} label="Show in dock" onChange={toggleDock} />
+      <ToggleRow checked={showInMenuBar} label="Show in menu bar" onChange={toggleMenuBar} />
       <div className="setting-group-label">Hotkeys</div>
       {(Object.keys(HOTKEY_LABELS) as Array<keyof ShortcutMap>).map((key) => (
         <HotkeyRow

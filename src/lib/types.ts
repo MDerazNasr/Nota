@@ -31,7 +31,17 @@ export type AppState = {
   archive: ArchivedItem[];
 };
 
-export type FontOption = "JetBrains Mono" | "Fira Code" | "IBM Plex Mono" | "Geist Mono";
+export type FontOption =
+  | "JetBrains Mono"
+  | "Fira Code"
+  | "IBM Plex Mono"
+  | "Geist Mono"
+  | "SF Mono"
+  | "Menlo"
+  | "Monaco"
+  | "Cascadia Code"
+  | "Source Code Pro"
+  | "Recursive Mono";
 
 export type ShortcutMap = {
   toggleWindow: string;
@@ -55,8 +65,9 @@ export type Settings = {
   itemLimit: number;
   openOnStartup: boolean;
   showInDock: boolean;
+  showInMenuBar: boolean;
   shortcuts: ShortcutMap;
   windowPosition?: WindowPosition;
 };
 
-export type AppMode = "nav" | "edit";
+export type AppMode = "nav" | "edit" | "move";
