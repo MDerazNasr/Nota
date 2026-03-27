@@ -215,6 +215,48 @@ describe("notes store", () => {
     expect(useNotesStore.getState().cursorIndex).toBe(0);
   });
 
+  it("reorders a keyboard move selection and can undo it", () => {
+    useNotesStore.getState().createItem("below");
+    useNotesStore.getState().setMode("nav");
+    useNotesStore.getState().createItem("below");
+    useNotesStore.getState().setMode("nav");
+    useNotesStore.getState().createItem("below");
+
+    const ids = activeTab().items.map((item) => item.id);
+
+    useNotesStore.getState().setCursorIndex(0);
+    useNotesStore.getState().enterMoveMode();
+    useNotesStore.getState().reorderMoveSelection("down");
+
+    expect(activeTab().items.map((item) => item.id)).toEqual([ids[1], ids[0], ids[2]]);
+    expect(useNotesStore.getState().mode).toBe("move");
+
+    useNotesStore.getState().undoLastChange();
+
+    expect(activeTab().items.map((item) => item.id)).toEqual(ids);
+    expect(useNotesStore.getState().mode).toBe("nav");
+  });
+
+  it("extends move selection by one item or by range", () => {
+    useNotesStore.getState().createItem("below");
+    useNotesStore.getState().setMode("nav");
+    useNotesStore.getState().createItem("below");
+    useNotesStore.getState().setMode("nav");
+    useNotesStore.getState().createItem("below");
+
+    const ids = activeTab().items.map((item) => item.id);
+
+    useNotesStore.getState().setCursorIndex(0);
+    useNotesStore.getState().enterMoveMode();
+    useNotesStore.getState().extendMoveSelection("down", false);
+
+    expect(useNotesStore.getState().selectedItemIds).toEqual([ids[0], ids[1]]);
+
+    useNotesStore.getState().extendMoveSelection("down", true);
+
+    expect(useNotesStore.getState().selectedItemIds).toEqual([ids[0], ids[1], ids[2]]);
+  });
+
   it("restores orphaned archived items to the current tab", () => {
     useNotesStore.getState().createItem("below");
     const sourceTab = activeTab();
@@ -281,6 +323,8 @@ function resetNotesState(state: AppState) {
     draggingItemIds: [],
     dropTargetTabId: null,
     itemDropTarget: null,
+    selectionAnchorId: null,
+    undoStack: [],
     hydrated: true,
   });
 }

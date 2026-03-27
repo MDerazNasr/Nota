@@ -27,6 +27,11 @@ export function useKeymap({ settingsOpen, setSettingsOpen }: KeymapOptions) {
         return;
       }
 
+      if (store.mode === "move") {
+        handleMoveKey(event);
+        return;
+      }
+
       if (store.mode !== "nav") {
         return;
       }
@@ -156,9 +161,42 @@ function handleNavKey(event: KeyboardEvent, lastDAt: MutableRefObject<number>) {
   } else if (event.key === "d") {
     event.preventDefault();
     deleteOnDoubleD(lastDAt);
+  } else if (event.key === " ") {
+    event.preventDefault();
+    store.enterMoveMode();
+  } else if (event.key === "u") {
+    event.preventDefault();
+    store.undoLastChange();
   } else if (event.key === "Enter") {
     event.preventDefault();
     store.setMode("edit");
+  }
+}
+
+function handleMoveKey(event: KeyboardEvent) {
+  const store = useNotesStore.getState();
+
+  if (event.key === " ") {
+    event.preventDefault();
+    store.exitMoveMode();
+  } else if (event.key === "Escape") {
+    event.preventDefault();
+    store.exitMoveMode();
+  } else if (event.key === "u") {
+    event.preventDefault();
+    store.undoLastChange();
+  } else if (event.key === "j" || event.key === "k") {
+    event.preventDefault();
+    const direction = event.key === "j" ? "down" : "up";
+
+    if (event.shiftKey || event.metaKey || event.ctrlKey) {
+      store.extendMoveSelection(direction, event.shiftKey);
+    } else {
+      store.reorderMoveSelection(direction);
+    }
+  } else if (event.key === "h" || event.key === "l") {
+    event.preventDefault();
+    store.moveSelectionToAdjacentTab(event.key === "l" ? "right" : "left");
   }
 }
 
