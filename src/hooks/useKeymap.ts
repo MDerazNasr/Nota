@@ -1,4 +1,6 @@
 import { useEffect, useRef, type MutableRefObject } from "react";
+import { invoke } from "@tauri-apps/api/core";
+import { extractFirstLink } from "../lib/content";
 import { formatShortcut } from "../lib/shortcuts";
 import { useNotesStore } from "../store/notes";
 import { useSettingsStore } from "../store/settings";
@@ -81,6 +83,12 @@ function handleCommandKey(
     return;
   }
 
+  if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "x") {
+    event.preventDefault();
+    openFocusedItemLink(store);
+    return;
+  }
+
   if (/^[1-9]$/.test(event.key)) {
     event.preventDefault();
     const tab = store.tabs[Number(event.key) - 1];
@@ -109,6 +117,16 @@ function handleCommandKey(
   if (matchesShortcut(shortcut, shortcuts.renameTab)) {
     event.preventDefault();
     store.setEditingTabId(store.activeTabId);
+  }
+}
+
+function openFocusedItemLink(store: ReturnType<typeof useNotesStore.getState>) {
+  const tab = store.tabs.find((entry) => entry.id === store.activeTabId);
+  const item = tab?.items[store.cursorIndex];
+  const href = item ? extractFirstLink(item.content) : null;
+
+  if (href) {
+    void invoke("open_url", { url: href });
   }
 }
 
@@ -175,6 +193,7 @@ function handleNavKey(event: KeyboardEvent, lastDAt: MutableRefObject<number>) {
 
 function handleMoveKey(event: KeyboardEvent) {
   const store = useNotesStore.getState();
+  const key = event.key.toLowerCase();
 
   if (event.key === " ") {
     event.preventDefault();
@@ -182,21 +201,21 @@ function handleMoveKey(event: KeyboardEvent) {
   } else if (event.key === "Escape") {
     event.preventDefault();
     store.exitMoveMode();
-  } else if (event.key === "u") {
+  } else if (key === "u") {
     event.preventDefault();
     store.undoLastChange();
-  } else if (event.key === "j" || event.key === "k") {
+  } else if (key === "j" || key === "k") {
     event.preventDefault();
-    const direction = event.key === "j" ? "down" : "up";
+    const direction = key === "j" ? "down" : "up";
 
     if (event.shiftKey || event.metaKey || event.ctrlKey) {
       store.extendMoveSelection(direction, event.shiftKey);
     } else {
       store.reorderMoveSelection(direction);
     }
-  } else if (event.key === "h" || event.key === "l") {
+  } else if (key === "h" || key === "l") {
     event.preventDefault();
-    store.moveSelectionToAdjacentTab(event.key === "l" ? "right" : "left");
+    store.moveSelectionToAdjacentTab(key === "l" ? "right" : "left");
   }
 }
 

@@ -12,9 +12,12 @@ export function LinkPopup({ initialLabel = "", onCancel, onSubmit, position }: L
   const [label, setLabel] = useState(initialLabel);
   const [url, setUrl] = useState("");
   const labelRef = useRef<HTMLInputElement>(null);
+  const urlRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     labelRef.current?.focus();
+    const id = window.setTimeout(() => labelRef.current?.focus(), 0);
+    return () => window.clearTimeout(id);
   }, []);
 
   const submit = () => {
@@ -31,26 +34,46 @@ export function LinkPopup({ initialLabel = "", onCancel, onSubmit, position }: L
         placeholder="Label"
         value={label}
         onChange={(event) => setLabel(event.currentTarget.value)}
-        onKeyDown={(event) => handleKey(event, submit, onCancel)}
+        onKeyDown={(event) => handleKey(event, submit, onCancel, () => urlRef.current?.focus(), () => labelRef.current?.focus())}
       />
       <input
+        ref={urlRef}
         aria-label="Link URL"
         placeholder="URL"
         value={url}
         onChange={(event) => setUrl(event.currentTarget.value)}
-        onKeyDown={(event) => handleKey(event, submit, onCancel)}
+        onKeyDown={(event) => handleKey(event, submit, onCancel, () => urlRef.current?.focus(), () => labelRef.current?.focus())}
       />
     </div>,
     document.body,
   );
 }
 
-function handleKey(event: React.KeyboardEvent<HTMLInputElement>, submit: () => void, cancel: () => void) {
+function handleKey(
+  event: React.KeyboardEvent<HTMLInputElement>,
+  submit: () => void,
+  cancel: () => void,
+  focusNext: () => void,
+  focusPrevious: () => void,
+) {
   if (event.key === "Enter") {
     event.preventDefault();
     submit();
   } else if (event.key === "Escape") {
     event.preventDefault();
     cancel();
+  } else if (event.key === "Tab") {
+    event.preventDefault();
+    if (event.shiftKey) {
+      focusPrevious();
+    } else {
+      focusNext();
+    }
+  } else if (event.key === "n" && event.currentTarget.value.length === 0) {
+    event.preventDefault();
+    focusNext();
+  } else if (event.key === "N" && event.currentTarget.value.length === 0) {
+    event.preventDefault();
+    focusPrevious();
   }
 }

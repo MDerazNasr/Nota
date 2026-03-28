@@ -23,7 +23,7 @@ export const DEFAULT_SETTINGS: Settings = {
   theme: "dark-zinc",
   font: "JetBrains Mono",
   fontSize: 13,
-  borderRadius: 4,
+  borderRadius: 8,
   itemLimit: 15,
   openOnStartup: false,
   showInDock: true,

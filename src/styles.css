@@ -13,7 +13,7 @@
   --accent: #4f8ef7;
   --accent-muted: rgb(79 142 247 / 30%);
   --done-opacity: 0.45;
-  --radius: 4px;
+  --radius: 8px;
   --font-family: "JetBrains Mono", monospace;
   --font-size: 13px;
 }
@@ -51,7 +51,7 @@ input {
   overflow: hidden;
   background: var(--bg);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: 12px;
 }
 
 .app-surface {

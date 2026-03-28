@@ -1,6 +1,6 @@
 import type { SlashCommand } from "../components/SlashMenu";
 
-export const SLASH_COMMANDS: SlashCommand[] = ["bold", "italic", "underline", "link"];
+export const SLASH_COMMANDS: SlashCommand[] = ["link"];
 
 export function filterSlashCommands(query: string) {
   const normalized = query.toLowerCase();
