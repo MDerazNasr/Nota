@@ -195,7 +195,7 @@ export function Item({ dropPosition, focused, index, item, selected, tabId }: It
 
         setCursorRect({
           height: Math.max(16, coords.bottom - coords.top),
-          left: coords.left - rowRect.left,
+          left: coords.left - rowRect.left - 3,
           top: coords.top - rowRect.top,
         });
       } catch {
