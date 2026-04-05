@@ -1,29 +1,26 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { Editor } from "@tiptap/core";
 import { invoke } from "@tauri-apps/api/core";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
 import Underline from "@tiptap/extension-underline";
-import { GripVertical } from "lucide-react";
+import { GripVertical, X } from "lucide-react";
+import {
+  applySlashItem,
+  dismissSlashMenu,
+  handleSlashKey,
+  insertLink,
+  readSlashState,
+  type LinkPopupState,
+  type SlashState,
+} from "../lib/itemSlash";
 import { handleEditorModeKey, type ItemEditorMode } from "../lib/itemEditorVim";
-import { normalizeHref } from "../lib/links";
-import { filterSlashCommands, nextSlashIndex } from "../lib/slashCommands";
+import { buildSlashItems } from "../lib/slashCommands";
+import { collectActiveTags } from "../lib/tags";
 import type { Item as ItemModel } from "../lib/types";
 import { useNotesStore } from "../store/notes";
 import { LinkPopup } from "./LinkPopup";
-import { SlashMenu, type SlashCommand } from "./SlashMenu";
-
-type SlashState = {
-  query: string;
-  range: { from: number; to: number };
-  selectedIndex: number;
-  position: { left: number; top: number };
-};
-
-type LinkPopupState = {
-  position: { left: number; top: number };
-};
+import { SlashMenu } from "./SlashMenu";
 
 type CursorRect = {
   height: number;
@@ -53,6 +50,8 @@ export function Item({ dropPosition, focused, index, item, selected, tabId }: It
   const selectedItemIds = useNotesStore((state) => state.selectedItemIds);
   const cancelItemDrag = useNotesStore((state) => state.cancelItemDrag);
   const checkItem = useNotesStore((state) => state.checkItem);
+  const addItemTag = useNotesStore((state) => state.addItemTag);
+  const removeItemTag = useNotesStore((state) => state.removeItemTag);
   const finishItemDrag = useNotesStore((state) => state.finishItemDrag);
   const finishItemDragAtItem = useNotesStore((state) => state.finishItemDragAtItem);
   const setSelectedItemIds = useNotesStore((state) => state.setSelectedItemIds);
@@ -61,11 +60,16 @@ export function Item({ dropPosition, focused, index, item, selected, tabId }: It
   const startItemDrag = useNotesStore((state) => state.startItemDrag);
   const toggleItemSelection = useNotesStore((state) => state.toggleItemSelection);
   const updateItemContent = useNotesStore((state) => state.updateItemContent);
+  const tabs = useNotesStore((state) => state.tabs);
   const [editorMode, setEditorMode] = useState<ItemEditorMode>("insert");
   const [cursorRect, setCursorRect] = useState<CursorRect | null>(null);
   const [slashState, setSlashState] = useState<SlashState | null>(null);
   const [linkPopup, setLinkPopup] = useState<LinkPopupState | null>(null);
-  const slashItems = useMemo(() => filterSlashCommands(slashState?.query ?? ""), [slashState?.query]);
+  const activeTags = useMemo(() => collectActiveTags(tabs), [tabs]);
+  const slashItems = useMemo(
+    () => buildSlashItems(slashState?.query ?? "", activeTags, item.tags ?? []),
+    [activeTags, item.tags, slashState?.query],
+  );
   const editable = focused && mode === "edit";
   const editor = useEditor({
     extensions: [
@@ -97,7 +101,7 @@ export function Item({ dropPosition, focused, index, item, selected, tabId }: It
 
         if (slashState) {
           const handled = handleSlashKey(event, slashState, slashItems, setSlashState, (command) => {
-            applySlashCommand(editor, slashState, command, setLinkPopup, setSlashState);
+            applySlashItem(editor, slashState, command, (tagName) => addItemTag(tabId, item.id, tagName), setLinkPopup, setSlashState);
           }, () => dismissSlashMenu(editor, slashState.range, setSlashState));
 
           if (handled) {
@@ -298,7 +302,28 @@ export function Item({ dropPosition, focused, index, item, selected, tabId }: It
           toggleItemSelection(item.id);
         }}
       />
-      <EditorContent editor={editor} />
+      <div className="item-body">
+        <EditorContent editor={editor} />
+        {(item.tags ?? []).length > 0 ? (
+          <div className="item-tags" aria-label="Tags">
+            {(item.tags ?? []).map((tag) => (
+              <span className="item-tag" key={tag.name} style={{ borderColor: tag.color, color: tag.color }}>
+                {tag.name}
+                <button
+                  type="button"
+                  aria-label={`Remove ${tag.name} tag`}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    removeItemTag(tabId, item.id, tag.name);
+                  }}
+                >
+                  <X size={10} strokeWidth={2} />
+                </button>
+              </span>
+            ))}
+          </div>
+        ) : null}
+      </div>
       {cursorRect ? (
         <span
           className={editorMode === "visual" ? "vim-block-cursor visual" : "vim-block-cursor"}
@@ -311,7 +336,9 @@ export function Item({ dropPosition, focused, index, item, selected, tabId }: It
           position={slashState.position}
           selectedIndex={Math.min(slashState.selectedIndex, slashItems.length - 1)}
           onDismiss={() => dismissSlashMenu(editor, slashState.range, setSlashState)}
-          onSelect={(command) => applySlashCommand(editor, slashState, command, setLinkPopup, setSlashState)}
+          onSelect={(command) =>
+            applySlashItem(editor, slashState, command, (tagName) => addItemTag(tabId, item.id, tagName), setLinkPopup, setSlashState)
+          }
         />
       ) : null}
       {linkPopup ? (
@@ -360,107 +387,4 @@ function getPointerDragTarget(x: number, y: number): PointerDragTarget {
 
   const tab = target.closest<HTMLElement>(".tab-bar [data-tab-id]");
   return tab?.dataset.tabId ? { kind: "tab", tabId: tab.dataset.tabId } : null;
-}
-
-function readSlashState(editor: Editor): SlashState | null {
-  const { selection } = editor.state;
-
-  if (!selection.empty) {
-    return null;
-  }
-
-  const { $from } = selection;
-  const beforeCursor = $from.parent.textBetween(0, $from.parentOffset, undefined, "\ufffc");
-  const match = /(?:^|\s)\/([a-z]*)$/i.exec(beforeCursor);
-
-  if (!match) {
-    return null;
-  }
-
-  const query = match[1];
-  const from = $from.pos - query.length - 1;
-  const coords = editor.view.coordsAtPos($from.pos);
-
-  return {
-    query,
-    range: { from, to: $from.pos },
-    selectedIndex: 0,
-    position: { left: coords.left, top: coords.bottom + 4 },
-  };
-}
-
-function handleSlashKey(
-  event: KeyboardEvent,
-  slashState: SlashState,
-  slashItems: SlashCommand[],
-  setSlashState: (state: SlashState | null) => void,
-  onSelect: (command: SlashCommand) => void,
-  onDismiss: () => void,
-) {
-  if (event.key === "j" || event.key === "ArrowDown") {
-    event.preventDefault();
-    setSlashState({ ...slashState, selectedIndex: nextSlashIndex(slashState.selectedIndex, "down", slashItems.length) });
-    return true;
-  }
-
-  if (event.key === "k" || event.key === "ArrowUp") {
-    event.preventDefault();
-    setSlashState({ ...slashState, selectedIndex: nextSlashIndex(slashState.selectedIndex, "up", slashItems.length) });
-    return true;
-  }
-
-  if (event.key === "Enter") {
-    event.preventDefault();
-    const command = slashItems[slashState.selectedIndex];
-    if (command) {
-      onSelect(command);
-    }
-    return true;
-  }
-
-  if (event.key === "Escape") {
-    event.preventDefault();
-    onDismiss();
-    return true;
-  }
-
-  return false;
-}
-
-function applySlashCommand(
-  editor: Editor | null,
-  slashState: SlashState,
-  command: SlashCommand,
-  setLinkPopup: (state: LinkPopupState | null) => void,
-  setSlashState: (state: SlashState | null) => void,
-) {
-  if (!editor) {
-    return;
-  }
-
-  const chain = editor.chain().focus().deleteRange(slashState.range);
-
-  if (command === "link") {
-    chain.run();
-    setLinkPopup({ position: slashState.position });
-    setSlashState(null);
-  }
-}
-
-
-function insertLink(editor: Editor | null, label: string, url: string) {
-  editor
-    ?.chain()
-    .focus()
-    .insertContent({
-      type: "text",
-      text: label,
-      marks: [{ type: "link", attrs: { href: normalizeHref(url) } }],
-    })
-    .run();
-}
-
-function dismissSlashMenu(editor: Editor | null, range: SlashState["range"], setSlashState: (state: SlashState | null) => void) {
-  editor?.chain().focus().deleteRange(range).run();
-  setSlashState(null);
 }

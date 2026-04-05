@@ -1,8 +1,10 @@
 import type { JSONContent } from "@tiptap/core";
-import { nanoid } from "nanoid";
 import { create } from "zustand";
-import { createDefaultAppState, createDefaultTab, EMPTY_DOC } from "../lib/defaults";
-import type { AppMode, AppState, ArchivedItem, Item, Tab } from "../lib/types";
+import { createDefaultAppState, createDefaultTab } from "../lib/defaults";
+import { collectActiveTags, createTag, findTagByName, normalizeTagName, tagKey } from "../lib/tags";
+import type { AppMode, AppState, ArchivedItem } from "../lib/types";
+import { commit } from "./notesCommit";
+import { createItemModel, createRestoredTab, insertAt, removeItemState, restoreArchivedItem, restoreToExistingTab } from "./notesItems";
 import {
   buildMoveSelectionState,
   buildMoveItemsState,
@@ -10,6 +12,7 @@ import {
   reorderSelectedItems,
   type ItemDropTarget,
 } from "./notesMovement";
+import { activeTab, clampCursor, cursorForTab, normalizeTitle } from "./notesSelectors";
 import { loadNotes, saveNotes } from "./persist";
 import { useSettingsStore } from "./settings";
 
@@ -34,6 +37,8 @@ type NotesStore = AppState & {
   updateTabTitle: (id: string, title: string) => void;
   createItem: (position: "above" | "below") => void;
   updateItemContent: (tabId: string, itemId: string, content: JSONContent) => void;
+  addItemTag: (tabId: string, itemId: string, tagName: string) => void;
+  removeItemTag: (tabId: string, itemId: string, tagName: string) => void;
   deleteItem: (tabId: string, itemId: string) => void;
   moveItemsToTab: (itemIds: string[], targetTabId: string) => void;
   moveSelectedItemsToTab: (targetTabId: string) => void;
@@ -166,7 +171,7 @@ export const useNotesStore = create<NotesStore>((set, get) => ({
         entry.id === tab.id ? { ...entry, items: insertAt(entry.items, cursorIndex, item) } : entry,
       ),
       cursorIndex,
-      mode: "edit",
+      mode: "edit" as const,
     }));
   },
   updateItemContent: (tabId, itemId, content) => {
@@ -177,6 +182,68 @@ export const useNotesStore = create<NotesStore>((set, get) => ({
           : tab,
       ),
     }));
+  },
+  addItemTag: (tabId, itemId, tagName) => {
+    const normalized = normalizeTagName(tagName);
+
+    if (!normalized || tagKey(normalized) === "link") {
+      return;
+    }
+
+    commit(set, get, (state) => {
+      const existingTag = findTagByName(collectActiveTags(state.tabs), normalized);
+      const tag = existingTag ?? createTag(normalized);
+      let changed = false;
+
+      const tabs = state.tabs.map((tab) => {
+        if (tab.id !== tabId) {
+          return tab;
+        }
+
+        const items = tab.items.map((item) => {
+          if (item.id !== itemId || findTagByName(item.tags ?? [], tag.name)) {
+            return item;
+          }
+
+          changed = true;
+          return { ...item, tags: [...(item.tags ?? []), tag] };
+        });
+
+        return changed ? { ...tab, items } : tab;
+      });
+
+      return changed ? { tabs } : {};
+    });
+  },
+  removeItemTag: (tabId, itemId, tagName) => {
+    const key = tagKey(tagName);
+
+    if (!key) {
+      return;
+    }
+
+    commit(set, get, (state) => {
+      let changed = false;
+
+      const tabs = state.tabs.map((tab) => {
+        if (tab.id !== tabId) {
+          return tab;
+        }
+
+        const items = tab.items.map((item) => {
+          if (item.id !== itemId || !findTagByName(item.tags ?? [], tagName)) {
+            return item;
+          }
+
+          changed = true;
+          return { ...item, tags: (item.tags ?? []).filter((tag) => tagKey(tag.name) !== key) };
+        });
+
+        return changed ? { ...tab, items } : tab;
+      });
+
+      return changed ? { tabs } : {};
+    });
   },
   deleteItem: (tabId, itemId) => {
     commit(set, get, (state) => removeItemState(state, tabId, itemId));
@@ -287,6 +354,7 @@ export const useNotesStore = create<NotesStore>((set, get) => ({
       const archived: ArchivedItem = {
         id: item.id,
         content: item.content,
+        tags: item.tags,
         archivedAt: Date.now(),
         sourceTabId: tab.id,
         sourceTabTitle: tab.title,
@@ -322,7 +390,7 @@ export const useNotesStore = create<NotesStore>((set, get) => ({
         return restoreToExistingTab(state, state.activeTabId, restored, archive);
       }
 
-      const tab = { ...createDefaultTab(destination || archived.sourceTabTitle), items: [restored] };
+      const tab = createRestoredTab(destination || archived.sourceTabTitle, restored);
 
       return {
         tabs: [...state.tabs, tab],
@@ -381,109 +449,3 @@ export const useNotesStore = create<NotesStore>((set, get) => ({
     void saveNotes(previous);
   },
 }));
-
-function commit(
-  set: (partial: Partial<NotesStore> | ((state: NotesStore) => Partial<NotesStore>)) => void,
-  get: () => NotesStore,
-  recipe: (state: NotesStore) => Partial<NotesStore>,
-) {
-  const before = toAppState(get());
-  set((state) => recipe(state));
-  const after = toAppState(get());
-  if (hasStateChanged(before, after)) {
-    set((state) => ({ undoStack: [...state.undoStack.slice(-19), before] }));
-  }
-  void saveNotes(toAppState(get()));
-}
-
-function hasStateChanged(previous: AppState, next: AppState) {
-  return JSON.stringify(previous) !== JSON.stringify(next);
-}
-
-function toAppState(state: NotesStore): AppState {
-  return {
-    tabs: state.tabs,
-    activeTabId: state.activeTabId,
-    archive: state.archive,
-  };
-}
-
-function activeTab(state: Pick<AppState, "tabs" | "activeTabId">): Tab | undefined {
-  return state.tabs.find((tab) => tab.id === state.activeTabId);
-}
-
-function cursorForTab(tab: Tab | undefined): number {
-  return tab && tab.items.length > 0 ? 0 : -1;
-}
-
-function clampCursor(index: number, tab: Tab | undefined) {
-  if (!tab || tab.items.length === 0) {
-    return -1;
-  }
-
-  return Math.min(Math.max(index, 0), tab.items.length - 1);
-}
-
-function normalizeTitle(title: string) {
-  const trimmed = title.trim().slice(0, 40);
-  return trimmed.length > 0 ? trimmed : "Untitled";
-}
-
-function createItemModel(): Item {
-  return {
-    id: nanoid(10),
-    content: structuredClone(EMPTY_DOC),
-    state: "active",
-    createdAt: Date.now(),
-  };
-}
-
-function insertAt<T>(items: T[], index: number, item: T): T[] {
-  const next = [...items];
-  next.splice(index, 0, item);
-  return next;
-}
-
-function removeItemState(state: NotesStore, tabId: string, itemId: string): Partial<NotesStore> {
-  const tab = state.tabs.find((entry) => entry.id === tabId);
-
-  if (!tab) {
-    return {};
-  }
-
-  const index = tab.items.findIndex((item) => item.id === itemId);
-
-  if (index === -1) {
-    return {};
-  }
-
-  const tabs = state.tabs.map((entry) =>
-    entry.id === tabId ? { ...entry, items: entry.items.filter((item) => item.id !== itemId) } : entry,
-  );
-  const updatedTab = tabs.find((entry) => entry.id === tabId);
-
-  return {
-    tabs,
-    cursorIndex: clampCursor(index, updatedTab),
-    selectedItemIds: state.selectedItemIds.filter((selectedId) => selectedId !== itemId),
-  };
-}
-
-function restoreArchivedItem(archived: ArchivedItem): Item {
-  return {
-    id: archived.id,
-    content: archived.content,
-    state: "active",
-    createdAt: Date.now(),
-  };
-}
-
-function restoreToExistingTab(state: NotesStore, tabId: string, item: Item, archive: ArchivedItem[]): Partial<NotesStore> {
-  return {
-    tabs: state.tabs.map((tab) => (tab.id === tabId ? { ...tab, items: [item, ...tab.items] } : tab)),
-    activeTabId: tabId,
-    archive,
-    archiveOpen: false,
-    cursorIndex: 0,
-  };
-}

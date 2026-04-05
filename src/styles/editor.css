@@ -28,6 +28,20 @@
   font-size: 11px;
 }
 
+.slash-menu-label {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+}
+
+.slash-menu-dot {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+}
+
 .slash-menu-item.active,
 .slash-menu-item:hover {
   background: var(--accent-muted);

@@ -105,6 +105,30 @@ describe("notes store", () => {
     });
   });
 
+  it("adds multiple tags to items and reuses the existing tag color", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0);
+    useNotesStore.getState().createItem("below");
+    useNotesStore.getState().setMode("nav");
+    useNotesStore.getState().createItem("below");
+
+    const tab = activeTab();
+    const [firstId, secondId] = tab.items.map((item) => item.id);
+
+    useNotesStore.getState().addItemTag(tab.id, firstId, " work ");
+    useNotesStore.getState().addItemTag(tab.id, firstId, "urgent");
+    useNotesStore.getState().addItemTag(tab.id, secondId, "Work");
+
+    const [first, second] = activeTab().items;
+
+    expect(first.tags.map((tag) => tag.name)).toEqual(["work", "urgent"]);
+    expect(second.tags).toEqual([{ name: "work", color: first.tags[0].color }]);
+
+    useNotesStore.getState().removeItemTag(tab.id, firstId, "work");
+    useNotesStore.getState().removeItemTag(tab.id, secondId, "work");
+
+    expect(activeTab().items.map((item) => item.tags.map((tag) => tag.name))).toEqual([["urgent"], []]);
+  });
+
   it("marks archive entries orphaned when their tab is deleted", () => {
     useNotesStore.getState().createItem("below");
     const tab = activeTab();
