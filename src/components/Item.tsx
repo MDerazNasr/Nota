@@ -348,6 +348,8 @@ export function Item({ dropPosition, focused, index, item, selected, tabId }: It
           onSubmit={(label, url) => {
             insertLink(editor, label, url);
             setLinkPopup(null);
+            setEditorMode("normal");
+            editor?.commands.focus();
           }}
         />
       ) : null}

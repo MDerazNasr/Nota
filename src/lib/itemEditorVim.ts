@@ -1,4 +1,5 @@
 import type { Editor } from "@tiptap/core";
+import { appendAfterTask } from "./itemSlash";
 
 export type ItemEditorMode = "insert" | "normal" | "visual";
 
@@ -63,8 +64,7 @@ export function handleEditorModeKey(
 
   if (event.key === "A") {
     event.preventDefault();
-    moveToLineBoundary(editor, "end", "normal");
-    editor.chain().focus().run();
+    appendAfterTask(editor);
     setEditorMode("insert");
     return true;
   }
