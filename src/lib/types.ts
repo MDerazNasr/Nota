@@ -57,11 +57,25 @@ export type ShortcutMap = {
   openSettings: string;
   checkItem: string;
   renameTab: string;
+  moveTabLeft: string;
+  moveTabRight: string;
+  createItemBelow: string;
+  createItemAbove: string;
+  editItem: string;
+  deleteItem: string;
+  enterMoveMode: string;
+  undo: string;
+  openItemLink: string;
 };
 
 export type WindowPosition = {
   x: number;
   y: number;
+};
+
+export type WindowSize = {
+  height: number;
+  width: number;
 };
 
 export type Settings = {
@@ -75,6 +89,7 @@ export type Settings = {
   showInMenuBar: boolean;
   shortcuts: ShortcutMap;
   windowPosition?: WindowPosition;
+  windowSize?: WindowSize;
 };
 
 export type AppMode = "nav" | "edit" | "move";

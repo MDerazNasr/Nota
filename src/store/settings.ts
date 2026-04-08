@@ -106,6 +106,7 @@ function toSettings(state: Settings): Settings {
     showInMenuBar: state.showInMenuBar,
     shortcuts: state.shortcuts,
     windowPosition: state.windowPosition,
+    windowSize: state.windowSize,
   };
 }
 

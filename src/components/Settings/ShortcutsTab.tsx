@@ -5,14 +5,44 @@ import { displayShortcut, formatShortcut } from "../../lib/shortcuts";
 import type { ShortcutMap } from "../../lib/types";
 import { useSettingsStore } from "../../store/settings";
 
-const HOTKEY_LABELS: Record<keyof ShortcutMap, string> = {
-  toggleWindow: "Toggle Window",
-  toggleArchive: "Toggle Archive",
-  newTab: "New Tab",
-  openSettings: "Open Settings",
-  checkItem: "Check Item",
-  renameTab: "Rename Tab",
-};
+const HOTKEY_SECTIONS: Array<{
+  label: string;
+  shortcuts: Array<{ key: keyof ShortcutMap; label: string }>;
+}> = [
+  {
+    label: "Window",
+    shortcuts: [
+      { key: "toggleWindow", label: "Toggle window" },
+      { key: "openSettings", label: "Open settings" },
+      { key: "toggleArchive", label: "Toggle archive" },
+    ],
+  },
+  {
+    label: "Tabs",
+    shortcuts: [
+      { key: "newTab", label: "New tab" },
+      { key: "renameTab", label: "Rename tab" },
+      { key: "moveTabLeft", label: "Move tab left" },
+      { key: "moveTabRight", label: "Move tab right" },
+    ],
+  },
+  {
+    label: "Item editing",
+    shortcuts: [
+      { key: "createItemBelow", label: "New item below" },
+      { key: "createItemAbove", label: "New item above" },
+      { key: "editItem", label: "Edit focused item" },
+      { key: "deleteItem", label: "Delete focused item" },
+      { key: "checkItem", label: "Check item" },
+      { key: "openItemLink", label: "Open item link" },
+      { key: "undo", label: "Undo" },
+    ],
+  },
+  {
+    label: "Item movement",
+    shortcuts: [{ key: "enterMoveMode", label: "Enter move mode" }],
+  },
+];
 
 export function ShortcutsTab() {
   const openOnStartup = useSettingsStore((state) => state.openOnStartup);
@@ -78,22 +108,27 @@ export function ShortcutsTab() {
   };
 
   return (
-    <section className="settings-section" aria-label="Shortcut settings">
+    <section className="settings-section" aria-label="Navigation settings">
       <div className="setting-group-label">Behavior</div>
       <ToggleRow checked={openOnStartup} label="Open on startup" onChange={toggleStartup} />
       <ToggleRow checked={showInDock} label="Show in dock" onChange={toggleDock} />
       <ToggleRow checked={showInMenuBar} label="Show in menu bar" onChange={toggleMenuBar} />
-      <div className="setting-group-label">Hotkeys</div>
-      {(Object.keys(HOTKEY_LABELS) as Array<keyof ShortcutMap>).map((key) => (
-        <HotkeyRow
-          capturing={captureKey === key}
-          key={key}
-          label={HOTKEY_LABELS[key]}
-          value={shortcuts[key]}
-          onCapture={() => setCaptureKey(key)}
-          onCancel={() => setCaptureKey(null)}
-          onSave={(value) => void saveShortcut(key, value)}
-        />
+      <div className="setting-group-label">Navigation</div>
+      {HOTKEY_SECTIONS.map((section) => (
+        <div className="hotkey-section" key={section.label}>
+          <div className="hotkey-section-label">{section.label}</div>
+          {section.shortcuts.map(({ key, label }) => (
+            <HotkeyRow
+              capturing={captureKey === key}
+              key={key}
+              label={label}
+              value={shortcuts[key]}
+              onCapture={() => setCaptureKey(key)}
+              onCancel={() => setCaptureKey(null)}
+              onSave={(value) => void saveShortcut(key, value)}
+            />
+          ))}
+        </div>
       ))}
       {error ? <p className="settings-error">{error}</p> : null}
     </section>
