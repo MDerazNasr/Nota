@@ -25,6 +25,7 @@ pub fn run() {
                             if window.is_visible().unwrap_or(false) {
                                 let _ = window.hide();
                             } else {
+                                restore_window_state(app);
                                 let _ = window.show();
                                 let _ = window.set_focus();
                             }
