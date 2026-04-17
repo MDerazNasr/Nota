@@ -82,7 +82,7 @@ describe("persist", () => {
 
     expect(settings.theme).toBe("dark-zinc");
     expect(settings.font).toBe("JetBrains Mono");
-    expect(settings.shortcuts.toggleWindow).toBe("CommandOrControl+Shift+N");
+    expect(settings.shortcuts.toggleWindow).toBe("Alt+Shift+N");
     expect(settings.shortcuts.openSettings).toBe("CommandOrControl+,");
     expect((data.settings as Settings).fontSize).toBe(13);
     expect(consoleError).toHaveBeenCalled();
@@ -117,6 +117,7 @@ describe("persist", () => {
 
     expect(settings.windowPosition).toEqual({ x: 80, y: 120 });
     expect(settings.windowSize).toEqual({ width: 380, height: 500 });
+    expect(settings.shortcuts.toggleWindow).toBe("Alt+Shift+N");
     expect(settings.shortcuts.openItemLink).toBe("CommandOrControl+X");
   });
 });
