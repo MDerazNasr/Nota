@@ -11,7 +11,7 @@ export const EMPTY_DOC = {
 };
 
 export const DEFAULT_SHORTCUTS = {
-  toggleWindow: "Alt+Shift+N",
+  toggleWindow: "CommandOrControl+Shift+N",
   toggleArchive: "CommandOrControl+0",
   newTab: "CommandOrControl+T",
   openSettings: "CommandOrControl+,",

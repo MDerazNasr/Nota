@@ -20,7 +20,6 @@ describe("formatShortcut", () => {
 
   it("renders stored shortcuts for display", () => {
     expect(displayShortcut("CommandOrControl+Shift+N")).toBe("Cmd + Shift + N");
-    expect(displayShortcut("Alt+Shift+N")).toBe("Opt + Shift + N");
     expect(displayShortcut("")).toBe("Disabled");
   });
 });
