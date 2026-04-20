@@ -18,8 +18,15 @@ describe("formatShortcut", () => {
     );
   });
 
+  it("uses physical key codes for option-modified letters", () => {
+    expect(formatShortcut({ altKey: true, code: "KeyN", ctrlKey: false, key: "Dead", metaKey: false, shiftKey: true })).toBe(
+      "Alt+Shift+KeyN",
+    );
+  });
+
   it("renders stored shortcuts for display", () => {
     expect(displayShortcut("CommandOrControl+Shift+N")).toBe("Cmd + Shift + N");
+    expect(displayShortcut("Alt+Shift+KeyN")).toBe("Opt + Shift + N");
     expect(displayShortcut("")).toBe("Disabled");
   });
 });
