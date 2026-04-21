@@ -48,13 +48,13 @@ export function handleSlashKey(
   onSelect: (item: SlashMenuItem) => void,
   onDismiss: () => void,
 ) {
-  if (event.key === "j" || event.key === "ArrowDown") {
+  if (event.key === "ArrowDown") {
     event.preventDefault();
     setSlashState({ ...slashState, selectedIndex: nextSlashIndex(slashState.selectedIndex, "down", slashItems.length) });
     return true;
   }
 
-  if (event.key === "k" || event.key === "ArrowUp") {
+  if (event.key === "ArrowUp") {
     event.preventDefault();
     setSlashState({ ...slashState, selectedIndex: nextSlashIndex(slashState.selectedIndex, "up", slashItems.length) });
     return true;
