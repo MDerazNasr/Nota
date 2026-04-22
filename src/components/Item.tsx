@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
@@ -17,6 +17,7 @@ import {
 import { handleEditorModeKey, type ItemEditorMode } from "../lib/itemEditorVim";
 import { buildSlashItems } from "../lib/slashCommands";
 import { collectActiveTags } from "../lib/tags";
+import { moveTagFocus, tagFocusAfterRemoval } from "../lib/tagKeyboard";
 import type { Item as ItemModel } from "../lib/types";
 import { useNotesStore } from "../store/notes";
 import { LinkPopup } from "./LinkPopup";
@@ -44,6 +45,7 @@ type PointerDragTarget =
 
 export function Item({ dropPosition, focused, index, item, selected, tabId }: ItemProps) {
   const rowRef = useRef<HTMLElement>(null);
+  const tagButtonRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const mode = useNotesStore((state) => state.mode);
   const setCursorIndex = useNotesStore((state) => state.setCursorIndex);
   const setMode = useNotesStore((state) => state.setMode);
@@ -65,6 +67,7 @@ export function Item({ dropPosition, focused, index, item, selected, tabId }: It
   const [cursorRect, setCursorRect] = useState<CursorRect | null>(null);
   const [slashState, setSlashState] = useState<SlashState | null>(null);
   const [linkPopup, setLinkPopup] = useState<LinkPopupState | null>(null);
+  const [activeTagIndex, setActiveTagIndex] = useState<number | null>(null);
   const activeTags = useMemo(() => collectActiveTags(tabs), [tabs]);
   const slashItems = useMemo(
     () => buildSlashItems(slashState?.query ?? "", activeTags, item.tags ?? []),
@@ -92,6 +95,12 @@ export function Item({ dropPosition, focused, index, item, selected, tabId }: It
         class: "item-editor",
       },
       handleKeyDown: (view, event) => {
+        if (shouldEnterTags(event, editor, editorMode, item.tags?.length ?? 0)) {
+          event.preventDefault();
+          setActiveTagIndex(0);
+          return true;
+        }
+
         if (handleEditorModeKey(event, editor, editorMode, setEditorMode, () => {
           setMode("nav");
           view.dom.blur();
@@ -184,6 +193,70 @@ export function Item({ dropPosition, focused, index, item, selected, tabId }: It
       rowRef.current?.scrollIntoView({ block: "nearest" });
     }
   }, [focused]);
+
+  useEffect(() => {
+    if (!editable) {
+      setActiveTagIndex(null);
+    }
+  }, [editable]);
+
+  useEffect(() => {
+    if (activeTagIndex === null) {
+      return;
+    }
+
+    const nextIndex = activeTagIndex >= (item.tags?.length ?? 0) ? null : activeTagIndex;
+
+    if (nextIndex === null) {
+      setActiveTagIndex(null);
+      editor?.commands.focus("end");
+      return;
+    }
+
+    tagButtonRefs.current[nextIndex]?.focus();
+  }, [activeTagIndex, editor, item.tags]);
+
+  const returnToTaskText = () => {
+    setActiveTagIndex(null);
+    setEditorMode("normal");
+    editor?.commands.focus("end");
+  };
+
+  const handleTagKeyDown = (event: ReactKeyboardEvent<HTMLButtonElement>, tagIndex: number, tagName: string) => {
+    if (event.key === "ArrowRight") {
+      event.preventDefault();
+      setActiveTagIndex(moveTagFocus(tagIndex, 1, item.tags?.length ?? 0));
+      return;
+    }
+
+    if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      const nextIndex = moveTagFocus(tagIndex, -1, item.tags?.length ?? 0);
+      if (nextIndex === null) {
+        returnToTaskText();
+      } else {
+        setActiveTagIndex(nextIndex);
+      }
+      return;
+    }
+
+    if (event.key === "Backspace" || event.key === "Delete") {
+      event.preventDefault();
+      const nextIndex = tagFocusAfterRemoval(tagIndex, item.tags?.length ?? 0);
+      removeItemTag(tabId, item.id, tagName);
+      if (nextIndex === null) {
+        returnToTaskText();
+      } else {
+        setActiveTagIndex(nextIndex);
+      }
+      return;
+    }
+
+    if (event.key === "Escape") {
+      event.preventDefault();
+      returnToTaskText();
+    }
+  };
 
   useEffect(() => {
     if (!editor || !editable || editorMode === "insert") {
@@ -312,12 +385,21 @@ export function Item({ dropPosition, focused, index, item, selected, tabId }: It
         <EditorContent editor={editor} />
         {(item.tags ?? []).length > 0 ? (
           <div className="item-tags" aria-label="Tags">
-            {(item.tags ?? []).map((tag) => (
-              <span className="item-tag" key={tag.name} style={{ borderColor: tag.color, color: tag.color }}>
+            {(item.tags ?? []).map((tag, tagIndex) => (
+              <span
+                className={activeTagIndex === tagIndex ? "item-tag active" : "item-tag"}
+                key={tag.name}
+                style={{ borderColor: tag.color, color: tag.color }}
+              >
                 {tag.name}
                 <button
+                  ref={(element) => {
+                    tagButtonRefs.current[tagIndex] = element;
+                  }}
                   type="button"
                   aria-label={`Remove ${tag.name} tag`}
+                  onFocus={() => setActiveTagIndex(tagIndex)}
+                  onKeyDown={(event) => handleTagKeyDown(event, tagIndex, tag.name)}
                   onClick={(event) => {
                     event.stopPropagation();
                     removeItemTag(tabId, item.id, tag.name);
@@ -372,6 +454,15 @@ function rowClassName(focused: boolean, selected: boolean, dropPosition: "before
   ]
     .filter(Boolean)
     .join(" ");
+}
+
+function shouldEnterTags(event: KeyboardEvent, editor: ReturnType<typeof useEditor>, editorMode: ItemEditorMode, tagCount: number) {
+  if (event.key !== "ArrowRight" || event.metaKey || event.ctrlKey || event.altKey || editorMode === "insert" || tagCount === 0 || !editor) {
+    return false;
+  }
+
+  const { selection } = editor.state;
+  return selection.empty && selection.to >= selection.$from.end();
 }
 
 function getPointerDragTarget(x: number, y: number): PointerDragTarget {
