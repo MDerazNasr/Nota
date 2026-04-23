@@ -48,10 +48,12 @@ export function ShortcutsTab() {
   const openOnStartup = useSettingsStore((state) => state.openOnStartup);
   const showInDock = useSettingsStore((state) => state.showInDock);
   const showInMenuBar = useSettingsStore((state) => state.showInMenuBar);
+  const archiveCompletedItems = useSettingsStore((state) => state.archiveCompletedItems);
   const shortcuts = useSettingsStore((state) => state.shortcuts);
   const setOpenOnStartup = useSettingsStore((state) => state.setOpenOnStartup);
   const setShowInDock = useSettingsStore((state) => state.setShowInDock);
   const setShowInMenuBar = useSettingsStore((state) => state.setShowInMenuBar);
+  const setArchiveCompletedItems = useSettingsStore((state) => state.setArchiveCompletedItems);
   const updateShortcut = useSettingsStore((state) => state.updateShortcut);
   const [captureKey, setCaptureKey] = useState<keyof ShortcutMap | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -113,6 +115,7 @@ export function ShortcutsTab() {
       <ToggleRow checked={openOnStartup} label="Open on startup" onChange={toggleStartup} />
       <ToggleRow checked={showInDock} label="Show in dock" onChange={toggleDock} />
       <ToggleRow checked={showInMenuBar} label="Show in menu bar" onChange={toggleMenuBar} />
+      <ToggleRow checked={archiveCompletedItems} label="Active archive" onChange={setArchiveCompletedItems} />
       <div className="setting-group-label">Navigation</div>
       {HOTKEY_SECTIONS.map((section) => (
         <div className="hotkey-section" key={section.label}>
@@ -138,7 +141,7 @@ export function ShortcutsTab() {
 type ToggleRowProps = {
   checked: boolean;
   label: string;
-  onChange: (checked: boolean) => Promise<void>;
+  onChange: (checked: boolean) => Promise<void> | void;
 };
 
 function ToggleRow({ checked, label, onChange }: ToggleRowProps) {

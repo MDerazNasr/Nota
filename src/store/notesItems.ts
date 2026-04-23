@@ -49,6 +49,65 @@ export function removeItemState(state: ItemMutationState, tabId: string, itemId:
   };
 }
 
+export function completeItemState(
+  state: ItemMutationState,
+  tabId: string,
+  itemId: string,
+  archiveCompletedItems: boolean,
+): Partial<ItemMutationState> {
+  if (archiveCompletedItems) {
+    return archiveItemState(state, tabId, itemId);
+  }
+
+  return toggleDoneItemState(state, tabId, itemId);
+}
+
+function archiveItemState(state: ItemMutationState, tabId: string, itemId: string): Partial<ItemMutationState> {
+  const tab = state.tabs.find((entry) => entry.id === tabId);
+  const item = tab?.items.find((entry) => entry.id === itemId);
+
+  if (!tab || !item) {
+    return {};
+  }
+
+  const archived: ArchivedItem = {
+    id: item.id,
+    content: item.content,
+    tags: item.tags,
+    archivedAt: Date.now(),
+    sourceTabId: tab.id,
+    sourceTabTitle: tab.title,
+    sourceTabExists: true,
+  };
+
+  return {
+    ...removeItemState(state, tabId, itemId),
+    archive: [...state.archive, archived],
+  };
+}
+
+function toggleDoneItemState(state: ItemMutationState, tabId: string, itemId: string): Partial<ItemMutationState> {
+  const tab = state.tabs.find((entry) => entry.id === tabId);
+  const index = tab?.items.findIndex((item) => item.id === itemId) ?? -1;
+  const item = index >= 0 ? tab?.items[index] : undefined;
+
+  if (!tab || !item) {
+    return {};
+  }
+
+  const nextItem: Item = { ...item, state: item.state === "done" ? "active" : "done" };
+  const items =
+    nextItem.state === "done"
+      ? [...tab.items.filter((entry) => entry.id !== itemId), nextItem]
+      : tab.items.map((entry) => (entry.id === itemId ? nextItem : entry));
+  const tabs = state.tabs.map((entry) => (entry.id === tabId ? { ...entry, items } : entry));
+
+  return {
+    tabs,
+    cursorIndex: items.findIndex((entry) => entry.id === itemId),
+  };
+}
+
 export function restoreArchivedItem(archived: ArchivedItem): Item {
   return {
     id: archived.id,

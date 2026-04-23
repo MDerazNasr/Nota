@@ -100,6 +100,7 @@ describe("persist", () => {
             itemLimit: 15,
             openOnStartup: false,
             showInDock: true,
+            archiveCompletedItems: true,
             shortcuts: {
               toggleWindow: "CommandOrControl+Shift+N",
               toggleArchive: "CommandOrControl+0",

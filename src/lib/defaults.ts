@@ -37,6 +37,7 @@ export const DEFAULT_SETTINGS: Settings = {
   openOnStartup: false,
   showInDock: true,
   showInMenuBar: false,
+  archiveCompletedItems: true,
   shortcuts: DEFAULT_SHORTCUTS,
 };
 

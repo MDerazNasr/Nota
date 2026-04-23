@@ -87,6 +87,7 @@ export type Settings = {
   openOnStartup: boolean;
   showInDock: boolean;
   showInMenuBar: boolean;
+  archiveCompletedItems: boolean;
   shortcuts: ShortcutMap;
   windowPosition?: WindowPosition;
   windowSize?: WindowSize;

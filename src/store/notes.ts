@@ -2,9 +2,17 @@ import type { JSONContent } from "@tiptap/core";
 import { create } from "zustand";
 import { createDefaultAppState, createDefaultTab } from "../lib/defaults";
 import { collectActiveTags, createTag, findTagByName, normalizeTagName, tagKey } from "../lib/tags";
-import type { AppMode, AppState, ArchivedItem } from "../lib/types";
+import type { AppMode, AppState } from "../lib/types";
 import { commit } from "./notesCommit";
-import { createItemModel, createRestoredTab, insertAt, removeItemState, restoreArchivedItem, restoreToExistingTab } from "./notesItems";
+import {
+  completeItemState,
+  createItemModel,
+  createRestoredTab,
+  insertAt,
+  removeItemState,
+  restoreArchivedItem,
+  restoreToExistingTab,
+} from "./notesItems";
 import {
   buildMoveSelectionState,
   buildMoveItemsState,
@@ -343,29 +351,9 @@ export const useNotesStore = create<NotesStore>((set, get) => ({
   },
   cancelItemDrag: () => set({ draggingItemIds: [], dropTargetTabId: null, itemDropTarget: null }),
   checkItem: (tabId, itemId) => {
-    commit(set, get, (state) => {
-      const tab = state.tabs.find((entry) => entry.id === tabId);
-      const item = tab?.items.find((entry) => entry.id === itemId);
-
-      if (!tab || !item) {
-        return {};
-      }
-
-      const archived: ArchivedItem = {
-        id: item.id,
-        content: item.content,
-        tags: item.tags,
-        archivedAt: Date.now(),
-        sourceTabId: tab.id,
-        sourceTabTitle: tab.title,
-        sourceTabExists: true,
-      };
-
-      return {
-        ...removeItemState(state, tabId, itemId),
-        archive: [...state.archive, archived],
-      };
-    });
+    commit(set, get, (state) =>
+      completeItemState(state, tabId, itemId, useSettingsStore.getState().archiveCompletedItems),
+    );
   },
   restoreItem: (archivedId, destination) => {
     commit(set, get, (state) => {
