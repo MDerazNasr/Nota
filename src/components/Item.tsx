@@ -17,7 +17,7 @@ import {
 import { handleEditorModeKey, type ItemEditorMode } from "../lib/itemEditorVim";
 import { buildSlashItems } from "../lib/slashCommands";
 import { collectActiveTags } from "../lib/tags";
-import { moveTagFocus, tagFocusAfterRemoval } from "../lib/tagKeyboard";
+import { isTagFocusTarget, moveTagFocus, tagFocusAfterRemoval } from "../lib/tagKeyboard";
 import type { Item as ItemModel } from "../lib/types";
 import { useNotesStore } from "../store/notes";
 import { LinkPopup } from "./LinkPopup";
@@ -166,7 +166,9 @@ export function Item({ dropPosition, focused, index, item, selected, tabId }: It
     onBlur: () => {
       setSlashState(null);
       window.setTimeout(() => {
-        if (!(document.activeElement instanceof HTMLElement) || !document.activeElement.closest(".link-popup")) {
+        const activeElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+
+        if (!activeElement?.closest(".link-popup") && !isTagFocusTarget(activeElement, rowRef.current)) {
           useNotesStore.getState().setMode("nav");
         }
       }, 0);
@@ -219,6 +221,7 @@ export function Item({ dropPosition, focused, index, item, selected, tabId }: It
   const returnToTaskText = () => {
     setActiveTagIndex(null);
     setEditorMode("normal");
+    setMode("edit");
     editor?.commands.focus("end");
   };
 
@@ -398,7 +401,10 @@ export function Item({ dropPosition, focused, index, item, selected, tabId }: It
                   }}
                   type="button"
                   aria-label={`Remove ${tag.name} tag`}
-                  onFocus={() => setActiveTagIndex(tagIndex)}
+                  onFocus={() => {
+                    setMode("edit");
+                    setActiveTagIndex(tagIndex);
+                  }}
                   onKeyDown={(event) => handleTagKeyDown(event, tagIndex, tag.name)}
                   onClick={(event) => {
                     event.stopPropagation();

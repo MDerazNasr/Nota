@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { moveTagFocus, tagFocusAfterRemoval } from "./tagKeyboard";
+import { isTagFocusTarget, moveTagFocus, tagFocusAfterRemoval } from "./tagKeyboard";
 
 describe("tag keyboard helpers", () => {
   it("moves through tags and returns null when moving left from the first tag", () => {
@@ -13,5 +13,18 @@ describe("tag keyboard helpers", () => {
     expect(tagFocusAfterRemoval(0, 2)).toBe(0);
     expect(tagFocusAfterRemoval(2, 3)).toBe(1);
     expect(tagFocusAfterRemoval(0, 1)).toBeNull();
+  });
+
+  it("detects tag focus inside the current item row", () => {
+    const row = document.createElement("article");
+    const tags = document.createElement("div");
+    const button = document.createElement("button");
+
+    tags.className = "item-tags";
+    tags.append(button);
+    row.append(tags);
+
+    expect(isTagFocusTarget(button, row)).toBe(true);
+    expect(isTagFocusTarget(button, document.createElement("article"))).toBe(false);
   });
 });
