@@ -15,6 +15,14 @@ const FONTS: FontOption[] = [
   "Cascadia Code",
   "Source Code Pro",
   "Recursive Mono",
+  "Hack",
+  "Iosevka",
+  "Inconsolata",
+  "Roboto Mono",
+  "Space Mono",
+  "Ubuntu Mono",
+  "CommitMono",
+  "Berkeley Mono",
 ];
 
 export function AppearanceTab() {

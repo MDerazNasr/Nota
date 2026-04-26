@@ -44,6 +44,48 @@ const HOTKEY_SECTIONS: Array<{
   },
 ];
 
+const REFERENCE_SECTIONS: Array<{
+  label: string;
+  rows: Array<{ keyCombo: string; label: string }>;
+}> = [
+  {
+    label: "Slash menu",
+    rows: [
+      { keyCombo: "/link", label: "Create link" },
+      { keyCombo: "/tag", label: "Create or add tag" },
+      { keyCombo: "Up / Down", label: "Move suggestions" },
+      { keyCombo: "Enter", label: "Use suggestion" },
+    ],
+  },
+  {
+    label: "Task Vim",
+    rows: [
+      { keyCombo: "Esc", label: "Normal mode" },
+      { keyCombo: "i / A", label: "Insert mode" },
+      { keyCombo: "v / V", label: "Visual mode" },
+      { keyCombo: "Cmd+B / I / U", label: "Format selection" },
+    ],
+  },
+  {
+    label: "Tags",
+    rows: [
+      { keyCombo: "Right", label: "Enter tags from task end" },
+      { keyCombo: "Left / Right", label: "Move between tags" },
+      { keyCombo: "Backspace", label: "Delete tag" },
+      { keyCombo: "Left on first", label: "Return to task" },
+    ],
+  },
+  {
+    label: "Move mode",
+    rows: [
+      { keyCombo: "Shift+J/K", label: "Range select" },
+      { keyCombo: "Cmd+J/K", label: "Add one item" },
+      { keyCombo: "J/K", label: "Reorder selection" },
+      { keyCombo: "H/L", label: "Move to adjacent tab" },
+    ],
+  },
+];
+
 export function ShortcutsTab() {
   const openOnStartup = useSettingsStore((state) => state.openOnStartup);
   const showInDock = useSettingsStore((state) => state.showInDock);
@@ -133,6 +175,14 @@ export function ShortcutsTab() {
           ))}
         </div>
       ))}
+      {REFERENCE_SECTIONS.map((section) => (
+        <div className="hotkey-section" key={section.label}>
+          <div className="hotkey-section-label">{section.label}</div>
+          {section.rows.map((row) => (
+            <ReferenceRow key={`${section.label}-${row.label}`} label={row.label} value={row.keyCombo} />
+          ))}
+        </div>
+      ))}
       {error ? <p className="settings-error">{error}</p> : null}
     </section>
   );
@@ -209,6 +259,20 @@ function HotkeyRow({ capturing, label, onCancel, onCapture, onSave, value }: Hot
       >
         {capturing ? "Press keys" : displayShortcut(value)}
       </button>
+    </div>
+  );
+}
+
+type ReferenceRowProps = {
+  label: string;
+  value: string;
+};
+
+function ReferenceRow({ label, value }: ReferenceRowProps) {
+  return (
+    <div className="shortcut-reference-row" data-settings-row="reference" tabIndex={-1}>
+      <span>{label}</span>
+      <kbd>{value}</kbd>
     </div>
   );
 }
