@@ -1,5 +1,6 @@
 import { load } from "@tauri-apps/plugin-store";
 import { createDefaultAppState, createDefaultSettings } from "../lib/defaults";
+import { isFontOption } from "../lib/fonts";
 import { normalizeTagName } from "../lib/tags";
 import type { AppState, ArchivedItem, Item, ItemTag, Settings, Tab } from "../lib/types";
 
@@ -191,6 +192,7 @@ function normalizeSettings(value: unknown): Settings | null {
   return {
     ...defaults,
     ...value,
+    font: isFontOption(value.font) ? value.font : defaults.font,
     shortcuts,
   };
 }

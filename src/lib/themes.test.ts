@@ -16,7 +16,7 @@ const REQUIRED_VARIABLES = [
 
 describe("themes", () => {
   it("defines every required CSS variable for each theme", () => {
-    expect(Object.keys(THEMES).length).toBeGreaterThanOrEqual(18);
+    expect(Object.keys(THEMES).length).toBeGreaterThanOrEqual(26);
 
     Object.values(THEMES).forEach((theme) => {
       REQUIRED_VARIABLES.forEach((variable) => {

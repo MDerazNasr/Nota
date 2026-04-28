@@ -121,4 +121,33 @@ describe("persist", () => {
     expect(settings.shortcuts.toggleWindow).toBe("Alt+Shift+KeyN");
     expect(settings.shortcuts.openItemLink).toBe("CommandOrControl+X");
   });
+
+  it("falls back when a stored font was removed from the curated font list", async () => {
+    setStoreLoaderForTests(
+      (async () =>
+        new MemoryStore({
+          settings: {
+            theme: "light",
+            font: "Menlo",
+            fontSize: 13,
+            borderRadius: 4,
+            itemLimit: 15,
+            openOnStartup: false,
+            showInDock: true,
+            archiveCompletedItems: true,
+            shortcuts: {
+              toggleWindow: "Alt+Shift+KeyN",
+              toggleArchive: "CommandOrControl+0",
+              newTab: "CommandOrControl+T",
+              openSettings: "CommandOrControl+,",
+              checkItem: "CommandOrControl+Enter",
+            },
+          },
+        })) as never,
+    );
+
+    const settings = await loadSettings();
+
+    expect(settings.font).toBe("JetBrains Mono");
+  });
 });
