@@ -1,6 +1,7 @@
 import { useEffect, useRef, type MutableRefObject } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { extractFirstLink } from "../lib/content";
+import { moveModeHorizontalDirectionForKey, verticalDirectionForKey } from "../lib/navigationKeys";
 import { formatShortcut } from "../lib/shortcuts";
 import { useNotesStore } from "../store/notes";
 import { useSettingsStore } from "../store/settings";
@@ -169,12 +170,11 @@ function handleNavKey(event: KeyboardEvent, lastDAt: MutableRefObject<number>) {
   const shortcuts = useSettingsStore.getState().shortcuts;
   const shortcut = formatShortcut(event);
 
-  if (event.key === "j") {
+  const verticalDirection = verticalDirectionForKey(event.key);
+
+  if (verticalDirection) {
     event.preventDefault();
-    store.moveCursor("down");
-  } else if (event.key === "k") {
-    event.preventDefault();
-    store.moveCursor("up");
+    store.moveCursor(verticalDirection);
   } else if (matchesShortcut(shortcut, shortcuts.createItemBelow)) {
     event.preventDefault();
     store.createItem("below");
@@ -224,18 +224,26 @@ function handleMoveKey(event: KeyboardEvent) {
   } else if (key === "u") {
     event.preventDefault();
     store.undoLastChange();
-  } else if (key === "j" || key === "k") {
+  } else {
+    handleMoveNavigationKey(event, store);
+  }
+}
+
+function handleMoveNavigationKey(event: KeyboardEvent, store: ReturnType<typeof useNotesStore.getState>) {
+  const verticalDirection = verticalDirectionForKey(event.key);
+  const horizontalDirection = moveModeHorizontalDirectionForKey(event.key);
+
+  if (verticalDirection) {
     event.preventDefault();
-    const direction = key === "j" ? "down" : "up";
 
     if (event.shiftKey || event.metaKey || event.ctrlKey) {
-      store.extendMoveSelection(direction, event.shiftKey);
+      store.extendMoveSelection(verticalDirection, event.shiftKey);
     } else {
-      store.reorderMoveSelection(direction);
+      store.reorderMoveSelection(verticalDirection);
     }
-  } else if (key === "h" || key === "l") {
+  } else if (horizontalDirection) {
     event.preventDefault();
-    store.moveSelectionToAdjacentTab(key === "l" ? "right" : "left");
+    store.moveSelectionToAdjacentTab(horizontalDirection);
   }
 }
 
