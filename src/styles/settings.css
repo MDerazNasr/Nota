@@ -110,3 +110,79 @@
   background: var(--surface-hover);
   color: var(--text-primary);
 }
+
+.setting-group-label {
+  margin-top: 8px;
+  color: var(--text-muted);
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.toggle-row,
+.hotkey-row {
+  display: grid;
+  min-height: 36px;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.toggle-row input {
+  accent-color: var(--accent);
+}
+
+.hotkey-row {
+  grid-template-columns: 1fr 128px 44px;
+}
+
+.hotkey-row button,
+.about-block button {
+  min-height: 28px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.hotkey-capture {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hotkey-capture.active {
+  border-color: var(--accent);
+  color: var(--text-primary);
+}
+
+.settings-error {
+  margin: 8px 0 0;
+  color: #f87171;
+  font-size: 11px;
+}
+
+.about-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.about-block h3,
+.about-block p {
+  margin: 0;
+}
+
+.about-block h3 {
+  color: var(--text-primary);
+  font-size: 13px;
+}
+
+.about-block button {
+  width: 112px;
+}
