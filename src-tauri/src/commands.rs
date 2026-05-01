@@ -1,4 +1,4 @@
-use tauri::{AppHandle, Manager};
+use tauri::AppHandle;
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut};
 use tauri_plugin_shell::ShellExt;
 
@@ -43,7 +43,9 @@ pub fn update_global_shortcut(app: AppHandle, old: String, new: String) -> Resul
 }
 
 #[tauri::command]
+#[allow(deprecated)]
 pub fn open_url(app: AppHandle, url: String) -> Result<(), String> {
+    // The spec requires shell based URL opening for v1.
     app.shell().open(url, None).map_err(|error| error.to_string())
 }
 

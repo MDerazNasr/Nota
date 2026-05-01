@@ -2,7 +2,7 @@ mod commands;
 
 use commands::{get_app_version, open_url, set_activation_policy, update_global_shortcut};
 use tauri::{Manager, WindowEvent};
-use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
+use tauri_plugin_global_shortcut::ShortcutState;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
