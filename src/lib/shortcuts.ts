@@ -29,6 +29,20 @@ export function formatShortcut(event: ShortcutEvent) {
   return parts.join("+");
 }
 
+export function displayShortcut(shortcut: string) {
+  if (!shortcut) {
+    return "Disabled";
+  }
+
+  return shortcut
+    .split("CommandOrControl")
+    .join("Cmd")
+    .split("Alt")
+    .join("Opt")
+    .split("+")
+    .join(" + ");
+}
+
 function normalizeKey(key: string) {
   if (key === " ") {
     return "Space";

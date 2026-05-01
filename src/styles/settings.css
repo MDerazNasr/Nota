@@ -135,7 +135,7 @@
 }
 
 .hotkey-row {
-  grid-template-columns: 1fr 128px 44px;
+  grid-template-columns: 1fr 148px;
 }
 
 .hotkey-row button,

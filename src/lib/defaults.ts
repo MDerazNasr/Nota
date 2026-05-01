@@ -16,6 +16,7 @@ export const DEFAULT_SHORTCUTS = {
   newTab: "CommandOrControl+T",
   openSettings: "CommandOrControl+,",
   checkItem: "CommandOrControl+Enter",
+  renameTab: "CommandOrControl+Shift+R",
 };
 
 export const DEFAULT_SETTINGS: Settings = {

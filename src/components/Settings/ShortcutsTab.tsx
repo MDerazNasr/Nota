@@ -1,7 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { disable, enable } from "@tauri-apps/plugin-autostart";
 import { useEffect, useRef, useState } from "react";
-import { formatShortcut } from "../../lib/shortcuts";
+import { displayShortcut, formatShortcut } from "../../lib/shortcuts";
 import type { ShortcutMap } from "../../lib/types";
 import { useSettingsStore } from "../../store/settings";
 
@@ -11,6 +11,7 @@ const HOTKEY_LABELS: Record<keyof ShortcutMap, string> = {
   newTab: "New Tab",
   openSettings: "Open Settings",
   checkItem: "Check Item",
+  renameTab: "Rename Tab",
 };
 
 export function ShortcutsTab() {
@@ -126,12 +127,14 @@ function HotkeyRow({ capturing, label, onCancel, onCapture, onSave, value }: Hot
         ref={captureRef}
         className={capturing ? "hotkey-capture active" : "hotkey-capture"}
         type="button"
+        title={value || "Disabled"}
         onClick={onCapture}
         onKeyDown={(event) => {
           if (!capturing) {
             return;
           }
 
+          event.stopPropagation();
           event.preventDefault();
 
           if (event.key === "Escape") {
@@ -146,10 +149,7 @@ function HotkeyRow({ capturing, label, onCancel, onCapture, onSave, value }: Hot
           }
         }}
       >
-        {capturing ? "Press keys" : value || "Disabled"}
-      </button>
-      <button type="button" onClick={onCapture}>
-        Edit
+        {capturing ? "Press keys" : displayShortcut(value)}
       </button>
     </div>
   );

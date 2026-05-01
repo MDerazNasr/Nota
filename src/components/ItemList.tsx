@@ -8,6 +8,7 @@ export function ItemList() {
   const activeTabId = useNotesStore((state) => state.activeTabId);
   const archive = useNotesStore((state) => state.archive);
   const cursorIndex = useNotesStore((state) => state.cursorIndex);
+  const selectedItemIds = useNotesStore((state) => state.selectedItemIds);
   const setArchiveOpen = useNotesStore((state) => state.setArchiveOpen);
   const itemLimit = useSettingsStore((state) => state.itemLimit);
   const activeTab = useMemo(() => tabs.find((tab) => tab.id === activeTabId), [activeTabId, tabs]);
@@ -19,7 +20,14 @@ export function ItemList() {
         <p className="empty-state">Press o to add an item</p>
       ) : (
         activeTab.items.map((item, index) => (
-          <Item focused={index === cursorIndex} index={index} item={item} key={item.id} tabId={activeTab.id} />
+          <Item
+            focused={index === cursorIndex}
+            index={index}
+            item={item}
+            key={item.id}
+            selected={selectedItemIds.includes(item.id)}
+            tabId={activeTab.id}
+          />
         ))
       )}
       {activeTab && activeTab.items.length === itemLimit ? <p className="limit-row">limit reached</p> : null}

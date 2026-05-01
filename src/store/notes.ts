@@ -11,6 +11,7 @@ type NotesStore = AppState & {
   mode: AppMode;
   archiveOpen: boolean;
   editingTabId: string | null;
+  selectedItemIds: string[];
   hydrated: boolean;
   hydrateNotes: () => Promise<void>;
   createTab: () => void;
@@ -22,6 +23,10 @@ type NotesStore = AppState & {
   createItem: (position: "above" | "below") => void;
   updateItemContent: (tabId: string, itemId: string, content: JSONContent) => void;
   deleteItem: (tabId: string, itemId: string) => void;
+  moveSelectedItemsToTab: (targetTabId: string) => void;
+  setSelectedItemIds: (itemIds: string[]) => void;
+  toggleItemSelection: (itemId: string) => void;
+  clearSelectedItems: () => void;
   checkItem: (tabId: string, itemId: string) => void;
   restoreItem: (archivedId: string, destination: "original" | "current" | string) => void;
   deleteArchivedItem: (archivedId: string) => void;
@@ -40,6 +45,7 @@ export const useNotesStore = create<NotesStore>((set, get) => ({
   mode: "nav",
   archiveOpen: false,
   editingTabId: null,
+  selectedItemIds: [],
   hydrated: false,
   hydrateNotes: async () => {
     const state = await loadNotes();
@@ -53,6 +59,7 @@ export const useNotesStore = create<NotesStore>((set, get) => ({
       activeTabId: tab.id,
       cursorIndex: -1,
       editingTabId: tab.id,
+      selectedItemIds: [],
     }));
   },
   deleteTab: (id) => {
@@ -76,6 +83,7 @@ export const useNotesStore = create<NotesStore>((set, get) => ({
         activeTabId,
         archive,
         cursorIndex: cursorForTab(tabs.find((tab) => tab.id === activeTabId)),
+        selectedItemIds: [],
       };
     });
   },
@@ -86,7 +94,7 @@ export const useNotesStore = create<NotesStore>((set, get) => ({
       return;
     }
 
-    set({ activeTabId: id, cursorIndex: cursorForTab(tab) });
+    set({ activeTabId: id, cursorIndex: cursorForTab(tab), selectedItemIds: [] });
   },
   setEditingTabId: (editingTabId) => set({ editingTabId }),
   reorderTab: (id, direction) => {
@@ -143,6 +151,63 @@ export const useNotesStore = create<NotesStore>((set, get) => ({
   deleteItem: (tabId, itemId) => {
     commit(set, get, (state) => removeItemState(state, tabId, itemId));
   },
+  moveSelectedItemsToTab: (targetTabId) => {
+    commit(set, get, (state) => {
+      const targetTab = state.tabs.find((tab) => tab.id === targetTabId);
+      const selected = new Set(state.selectedItemIds);
+
+      if (!targetTab || selected.size === 0) {
+        return {};
+      }
+
+      const itemLimit = useSettingsStore.getState().itemLimit;
+      const capacity = Math.max(0, itemLimit - targetTab.items.length);
+      const movableItems = state.tabs.flatMap((tab) => tab.items.filter((item) => selected.has(item.id))).slice(0, capacity);
+
+      if (movableItems.length === 0) {
+        return {};
+      }
+
+      const movedIds = new Set(movableItems.map((item) => item.id));
+      const insertionIndex = targetTab.items.length;
+      const tabs = state.tabs.map((tab) => {
+        if (tab.id === targetTabId) {
+          return {
+            ...tab,
+            items: [...tab.items.filter((item) => !movedIds.has(item.id)), ...movableItems],
+          };
+        }
+
+        return {
+          ...tab,
+          items: tab.items.filter((item) => !movedIds.has(item.id)),
+        };
+      });
+
+      return {
+        tabs,
+        activeTabId: targetTabId,
+        cursorIndex: insertionIndex,
+        selectedItemIds: [],
+        mode: "nav",
+      };
+    });
+  },
+  setSelectedItemIds: (selectedItemIds) => set({ selectedItemIds }),
+  toggleItemSelection: (itemId) => {
+    set((state) => {
+      const selected = new Set(state.selectedItemIds);
+
+      if (selected.has(itemId)) {
+        selected.delete(itemId);
+      } else {
+        selected.add(itemId);
+      }
+
+      return { selectedItemIds: [...selected], mode: "nav" };
+    });
+  },
+  clearSelectedItems: () => set({ selectedItemIds: [] }),
   checkItem: (tabId, itemId) => {
     commit(set, get, (state) => {
       const tab = state.tabs.find((entry) => entry.id === tabId);
@@ -304,6 +369,7 @@ function removeItemState(state: NotesStore, tabId: string, itemId: string): Part
   return {
     tabs,
     cursorIndex: clampCursor(index, updatedTab),
+    selectedItemIds: state.selectedItemIds.filter((selectedId) => selectedId !== itemId),
   };
 }
 

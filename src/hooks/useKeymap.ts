@@ -1,5 +1,7 @@
 import { useEffect, useRef, type MutableRefObject } from "react";
+import { formatShortcut } from "../lib/shortcuts";
 import { useNotesStore } from "../store/notes";
+import { useSettingsStore } from "../store/settings";
 
 type KeymapOptions = {
   settingsOpen: boolean;
@@ -17,7 +19,10 @@ export function useKeymap({ settingsOpen, setSettingsOpen }: KeymapOptions) {
         return;
       }
 
-      if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+      const shortcut = formatShortcut(event);
+      const shortcuts = useSettingsStore.getState().shortcuts;
+
+      if (matchesShortcut(shortcut, shortcuts.checkItem)) {
         handleCheckItem(event);
         return;
       }
@@ -36,8 +41,8 @@ export function useKeymap({ settingsOpen, setSettingsOpen }: KeymapOptions) {
         return;
       }
 
-      if (event.metaKey || event.ctrlKey) {
-        handleCommandKey(event, setSettingsOpen);
+      if (hasCommandModifier(event)) {
+        handleCommandKey(event, shortcut, setSettingsOpen, settingsOpen);
         return;
       }
 
@@ -61,10 +66,16 @@ function isEditableTarget(target: EventTarget | null) {
   return target.closest("input, textarea, [contenteditable='true']") !== null;
 }
 
-function handleCommandKey(event: KeyboardEvent, setSettingsOpen: (open: boolean) => void) {
+function handleCommandKey(
+  event: KeyboardEvent,
+  shortcut: string,
+  setSettingsOpen: (open: boolean) => void,
+  settingsOpen: boolean,
+) {
   const store = useNotesStore.getState();
+  const shortcuts = useSettingsStore.getState().shortcuts;
 
-  if (event.key === "t") {
+  if (matchesShortcut(shortcut, shortcuts.newTab)) {
     event.preventDefault();
     store.createTab();
     return;
@@ -81,23 +92,32 @@ function handleCommandKey(event: KeyboardEvent, setSettingsOpen: (open: boolean)
     return;
   }
 
-  if (event.key === "0") {
+  if (matchesShortcut(shortcut, shortcuts.toggleArchive)) {
     event.preventDefault();
     setSettingsOpen(false);
     store.setArchiveOpen(!store.archiveOpen);
     return;
   }
 
-  if (event.key === ",") {
+  if (matchesShortcut(shortcut, shortcuts.openSettings)) {
     event.preventDefault();
     store.setArchiveOpen(false);
-    setSettingsOpen(true);
+    setSettingsOpen(!settingsOpen);
     return;
   }
 
-  if (event.key === "Enter") {
-    handleCheckItem(event);
+  if (matchesShortcut(shortcut, shortcuts.renameTab)) {
+    event.preventDefault();
+    store.setEditingTabId(store.activeTabId);
   }
+}
+
+function matchesShortcut(actual: string, expected: string) {
+  return expected.length > 0 && actual === expected;
+}
+
+function hasCommandModifier(event: KeyboardEvent) {
+  return event.metaKey || event.ctrlKey || event.altKey;
 }
 
 function handleCheckItem(event: KeyboardEvent) {

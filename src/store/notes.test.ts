@@ -119,6 +119,27 @@ describe("notes store", () => {
     expect(state.tabs[0].title).toBe("Untitled");
     expect(state.archive[0].sourceTabExists).toBe(false);
   });
+
+  it("moves selected items to another tab", () => {
+    useNotesStore.getState().createItem("below");
+    useNotesStore.getState().setMode("nav");
+    useNotesStore.getState().createItem("below");
+    useNotesStore.getState().createTab();
+
+    const state = useNotesStore.getState();
+    const sourceTab = state.tabs[0];
+    const targetTab = state.tabs[1];
+
+    useNotesStore.getState().setSelectedItemIds(sourceTab.items.map((item) => item.id));
+    useNotesStore.getState().moveSelectedItemsToTab(targetTab.id);
+
+    const next = useNotesStore.getState();
+
+    expect(next.tabs[0].items).toEqual([]);
+    expect(next.tabs[1].items.map((item) => item.id)).toEqual(sourceTab.items.map((item) => item.id));
+    expect(next.activeTabId).toBe(targetTab.id);
+    expect(next.selectedItemIds).toEqual([]);
+  });
 });
 
 function resetNotesState(state: AppState) {
@@ -128,6 +149,7 @@ function resetNotesState(state: AppState) {
     mode: "nav",
     archiveOpen: false,
     editingTabId: null,
+    selectedItemIds: [],
     hydrated: true,
   });
 }

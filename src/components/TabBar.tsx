@@ -7,6 +7,7 @@ export function TabBar() {
   const editingTabId = useNotesStore((state) => state.editingTabId);
   const createTab = useNotesStore((state) => state.createTab);
   const deleteTab = useNotesStore((state) => state.deleteTab);
+  const moveSelectedItemsToTab = useNotesStore((state) => state.moveSelectedItemsToTab);
   const setActiveTab = useNotesStore((state) => state.setActiveTab);
   const setEditingTabId = useNotesStore((state) => state.setEditingTabId);
   const updateTabTitle = useNotesStore((state) => state.updateTabTitle);
@@ -38,6 +39,14 @@ export function TabBar() {
               className={tab.id === activeTabId ? "tab-pill active" : "tab-pill"}
               type="button"
               title={tab.title}
+              onDragOver={(event) => {
+                event.preventDefault();
+                event.dataTransfer.dropEffect = "move";
+              }}
+              onDrop={(event) => {
+                event.preventDefault();
+                moveSelectedItemsToTab(tab.id);
+              }}
               onClick={() => setActiveTab(tab.id)}
               onContextMenu={(event) => {
                 event.preventDefault();
@@ -48,6 +57,17 @@ export function TabBar() {
               {tab.title}
             </button>
           )}
+          <button
+            className="tab-delete"
+            type="button"
+            aria-label={`Delete ${tab.title}`}
+            onClick={(event) => {
+              event.stopPropagation();
+              deleteTab(tab.id);
+            }}
+          >
+            x
+          </button>
           {contextTabId === tab.id ? (
             <button className="tab-context" type="button" onClick={() => deleteTab(tab.id)}>
               Delete Tab
