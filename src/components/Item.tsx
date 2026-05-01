@@ -6,7 +6,6 @@ import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
 import Underline from "@tiptap/extension-underline";
 import { GripVertical } from "lucide-react";
-import { createItemDragPayload, ITEM_DRAG_MIME } from "../lib/itemDrag";
 import { normalizeHref } from "../lib/links";
 import { filterSlashCommands, nextSlashIndex } from "../lib/slashCommands";
 import type { Item as ItemModel } from "../lib/types";
@@ -38,8 +37,12 @@ export function Item({ focused, index, item, selected, tabId }: ItemProps) {
   const setCursorIndex = useNotesStore((state) => state.setCursorIndex);
   const setMode = useNotesStore((state) => state.setMode);
   const selectedItemIds = useNotesStore((state) => state.selectedItemIds);
+  const cancelItemDrag = useNotesStore((state) => state.cancelItemDrag);
   const checkItem = useNotesStore((state) => state.checkItem);
+  const finishItemDrag = useNotesStore((state) => state.finishItemDrag);
   const setSelectedItemIds = useNotesStore((state) => state.setSelectedItemIds);
+  const setDropTargetTabId = useNotesStore((state) => state.setDropTargetTabId);
+  const startItemDrag = useNotesStore((state) => state.startItemDrag);
   const toggleItemSelection = useNotesStore((state) => state.toggleItemSelection);
   const updateItemContent = useNotesStore((state) => state.updateItemContent);
   const [slashState, setSlashState] = useState<SlashState | null>(null);
@@ -161,15 +164,39 @@ export function Item({ focused, index, item, selected, tabId }: ItemProps) {
       <button
         className="item-drag-handle"
         type="button"
-        draggable
         aria-label="Drag item"
         onClick={(event) => event.stopPropagation()}
-        onDragStart={(event) => {
+        onPointerDown={(event) => {
+          if (event.button !== 0) {
+            return;
+          }
+
+          event.preventDefault();
           event.stopPropagation();
           const draggedIds = selectedItemIds.includes(item.id) ? selectedItemIds : [item.id];
           setSelectedItemIds(draggedIds);
-          event.dataTransfer.effectAllowed = "move";
-          event.dataTransfer.setData(ITEM_DRAG_MIME, createItemDragPayload(draggedIds));
+          startItemDrag(draggedIds);
+
+          const handlePointerMove = (pointerEvent: PointerEvent) => {
+            setDropTargetTabId(getTabIdAtPoint(pointerEvent.clientX, pointerEvent.clientY));
+          };
+          const handlePointerUp = (pointerEvent: PointerEvent) => {
+            finishItemDrag(getTabIdAtPoint(pointerEvent.clientX, pointerEvent.clientY));
+            cleanupDragListeners();
+          };
+          const handlePointerCancel = () => {
+            cancelItemDrag();
+            cleanupDragListeners();
+          };
+          const cleanupDragListeners = () => {
+            window.removeEventListener("pointermove", handlePointerMove);
+            window.removeEventListener("pointerup", handlePointerUp);
+            window.removeEventListener("pointercancel", handlePointerCancel);
+          };
+
+          window.addEventListener("pointermove", handlePointerMove);
+          window.addEventListener("pointerup", handlePointerUp);
+          window.addEventListener("pointercancel", handlePointerCancel);
         }}
       >
         <GripVertical size={14} strokeWidth={1.75} />
@@ -209,6 +236,13 @@ export function Item({ focused, index, item, selected, tabId }: ItemProps) {
 
 function rowClassName(focused: boolean, selected: boolean) {
   return ["item-row", focused ? "focused" : "", selected ? "selected" : ""].filter(Boolean).join(" ");
+}
+
+function getTabIdAtPoint(x: number, y: number) {
+  const target = document.elementFromPoint(x, y);
+  const tab = target instanceof HTMLElement ? target.closest<HTMLElement>("[data-tab-id]") : null;
+
+  return tab?.dataset.tabId ?? null;
 }
 
 function readSlashState(editor: Editor): SlashState | null {

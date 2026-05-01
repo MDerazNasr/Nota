@@ -156,6 +156,46 @@ describe("notes store", () => {
     expect(useNotesStore.getState().tabs[1].items[0].id).toBe(sourceItem.id);
   });
 
+  it("finishes a pointer drag by moving dragged item ids to the target tab", () => {
+    useNotesStore.getState().createItem("below");
+    useNotesStore.getState().setMode("nav");
+    useNotesStore.getState().createTab();
+
+    const state = useNotesStore.getState();
+    const sourceItem = state.tabs[0].items[0];
+    const targetTab = state.tabs[1];
+
+    useNotesStore.getState().startItemDrag([sourceItem.id]);
+    useNotesStore.getState().setDropTargetTabId(targetTab.id);
+    useNotesStore.getState().finishItemDrag(targetTab.id);
+
+    const next = useNotesStore.getState();
+
+    expect(next.tabs[0].items).toEqual([]);
+    expect(next.tabs[1].items[0].id).toBe(sourceItem.id);
+    expect(next.draggingItemIds).toEqual([]);
+    expect(next.dropTargetTabId).toBeNull();
+  });
+
+  it("cancels a pointer drag without moving items", () => {
+    useNotesStore.getState().createItem("below");
+    useNotesStore.getState().setMode("nav");
+    useNotesStore.getState().createTab();
+
+    const state = useNotesStore.getState();
+    const sourceItem = state.tabs[0].items[0];
+
+    useNotesStore.getState().startItemDrag([sourceItem.id]);
+    useNotesStore.getState().finishItemDrag(null);
+
+    const next = useNotesStore.getState();
+
+    expect(next.tabs[0].items[0].id).toBe(sourceItem.id);
+    expect(next.tabs[1].items).toEqual([]);
+    expect(next.draggingItemIds).toEqual([]);
+    expect(next.dropTargetTabId).toBeNull();
+  });
+
   it("restores orphaned archived items to the current tab", () => {
     useNotesStore.getState().createItem("below");
     const sourceTab = activeTab();
@@ -219,6 +259,8 @@ function resetNotesState(state: AppState) {
     archiveOpen: false,
     editingTabId: null,
     selectedItemIds: [],
+    draggingItemIds: [],
+    dropTargetTabId: null,
     hydrated: true,
   });
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArchivePanel } from "./components/ArchivePanel";
 import { ItemList } from "./components/ItemList";
 import { SettingsPanel } from "./components/Settings/SettingsPanel";
@@ -9,9 +9,16 @@ import { useNotesStore } from "./store/notes";
 
 function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const archiveOpen = useNotesStore((state) => state.archiveOpen);
   const setArchiveOpen = useNotesStore((state) => state.setArchiveOpen);
 
   useKeymap({ settingsOpen, setSettingsOpen });
+
+  useEffect(() => {
+    if (archiveOpen) {
+      setSettingsOpen(false);
+    }
+  }, [archiveOpen]);
 
   const openSettings = () => {
     setArchiveOpen(false);
