@@ -128,6 +128,7 @@ input {
   overflow-x: auto;
   border-bottom: 1px solid var(--border);
   padding: 0 8px;
+  position: relative;
   scrollbar-width: none;
 }
 
@@ -148,6 +149,37 @@ input {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.tab-wrap {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+}
+
+.tab-title-input {
+  width: 120px;
+  border: 0;
+  border-bottom: 2px solid var(--accent);
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 12px;
+  padding: 0;
+}
+
+.tab-context {
+  position: absolute;
+  top: 28px;
+  left: 0;
+  z-index: 20;
+  width: 96px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text-primary);
+  font-size: 11px;
+  padding: 8px;
+  text-align: left;
 }
 
 .tab-pill.active {

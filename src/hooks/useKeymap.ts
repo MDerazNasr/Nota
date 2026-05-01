@@ -13,6 +13,10 @@ export function useKeymap({ settingsOpen, setSettingsOpen }: KeymapOptions) {
     const handleKeyDown = (event: KeyboardEvent) => {
       const store = useNotesStore.getState();
 
+      if (isEditableTarget(event.target)) {
+        return;
+      }
+
       if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
         handleCheckItem(event);
         return;
@@ -42,6 +46,14 @@ export function useKeymap({ settingsOpen, setSettingsOpen }: KeymapOptions) {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [setSettingsOpen, settingsOpen]);
+}
+
+function isEditableTarget(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) {
+    return false;
+  }
+
+  return target.closest("input, textarea, [contenteditable='true']") !== null;
 }
 
 function handleCommandKey(event: KeyboardEvent, setSettingsOpen: (open: boolean) => void) {
