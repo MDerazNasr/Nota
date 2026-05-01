@@ -109,7 +109,7 @@ export function Item({ dropPosition, focused, index, item, selected, tabId }: It
         }
 
         if (slashState) {
-          const handled = handleSlashKey(event, slashState, slashItems, setSlashState, (command) => {
+          const handled = handleSlashKey(event, slashState, slashItems, (command) => {
             applySlashItem(editor, slashState, command, (tagName) => addItemTag(tabId, item.id, tagName), setLinkPopup, setSlashState);
           }, () => dismissSlashMenu(editor, slashState.range, setSlashState));
 

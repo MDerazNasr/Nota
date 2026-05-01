@@ -29,28 +29,24 @@ describe("item slash helpers", () => {
 
   it("lets j and k type while slash suggestions are open", () => {
     const event = createKeyboardEvent("j");
-    const handled = handleSlashKey(event, createSlashState(), [], vi.fn(), vi.fn(), vi.fn());
+    const handled = handleSlashKey(event, createSlashState(), [], vi.fn(), vi.fn());
 
     expect(handled).toBe(false);
     expect(event.preventDefault).not.toHaveBeenCalled();
   });
 
-  it("uses arrow keys to navigate slash suggestions", () => {
+  it("does not reserve arrow keys for slash suggestions", () => {
     const event = createKeyboardEvent("ArrowDown");
-    const setSlashState = vi.fn();
-
     const handled = handleSlashKey(
       event,
       createSlashState(),
       [{ id: "link", kind: "command", command: "link", label: "Link", description: "Add link" }],
-      setSlashState,
       vi.fn(),
       vi.fn(),
     );
 
-    expect(handled).toBe(true);
-    expect(event.preventDefault).toHaveBeenCalled();
-    expect(setSlashState).toHaveBeenCalledWith(expect.objectContaining({ selectedIndex: 0 }));
+    expect(handled).toBe(false);
+    expect(event.preventDefault).not.toHaveBeenCalled();
   });
 });
 

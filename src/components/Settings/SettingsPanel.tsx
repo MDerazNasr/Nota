@@ -43,10 +43,10 @@ export function SettingsPanel({ onClose, open }: SettingsPanelProps) {
 
       const rows = getSettingsRows(panelRef.current);
 
-      if (event.key === "j" || event.key === "ArrowDown") {
+      if (event.key === "j") {
         event.preventDefault();
         setFocusIndex((current) => moveSettingsFocus(current, 1, rows.length));
-      } else if (event.key === "k" || event.key === "ArrowUp") {
+      } else if (event.key === "k") {
         event.preventDefault();
         setFocusIndex((current) => moveSettingsFocus(current, -1, rows.length));
       } else if (event.key === "h") {
@@ -69,6 +69,12 @@ export function SettingsPanel({ onClose, open }: SettingsPanelProps) {
       } else if (event.key === "ArrowRight") {
         event.preventDefault();
         adjustSettingsRow(rows[focusIndex], 1);
+      } else if (event.key === "ArrowDown" && rows[focusIndex]?.dataset.settingsRow === "theme") {
+        event.preventDefault();
+        adjustSettingsRow(rows[focusIndex], 1);
+      } else if (event.key === "ArrowUp" && rows[focusIndex]?.dataset.settingsRow === "theme") {
+        event.preventDefault();
+        adjustSettingsRow(rows[focusIndex], -1);
       } else if (event.key === "Escape") {
         event.preventDefault();
         onClose();
