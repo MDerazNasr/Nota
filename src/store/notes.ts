@@ -180,6 +180,10 @@ export const useNotesStore = create<NotesStore>((set, get) => ({
         return restoreToExistingTab(state, archived.sourceTabId, restored, archive);
       }
 
+      if (destination === "original") {
+        return {};
+      }
+
       if (destination === "current") {
         return restoreToExistingTab(state, state.activeTabId, restored, archive);
       }
