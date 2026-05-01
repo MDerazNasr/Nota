@@ -4,6 +4,7 @@ import App from "./App";
 import { useNotesStore } from "./store/notes";
 import { useSettingsStore } from "./store/settings";
 import "./styles.css";
+import "./styles/editor.css";
 import "./styles/settings.css";
 
 async function bootstrap() {
