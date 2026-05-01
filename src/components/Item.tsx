@@ -3,6 +3,8 @@ import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
 import Underline from "@tiptap/extension-underline";
+import { GripVertical } from "lucide-react";
+import { createItemDragPayload, ITEM_DRAG_MIME } from "../lib/itemDrag";
 import type { Item as ItemModel } from "../lib/types";
 import { useNotesStore } from "../store/notes";
 
@@ -82,7 +84,6 @@ export function Item({ focused, index, item, selected, tabId }: ItemProps) {
     <article
       className={rowClassName(focused, selected)}
       data-state={item.state}
-      draggable
       onClick={(event) => {
         if (event.metaKey || event.ctrlKey || event.shiftKey) {
           toggleItemSelection(item.id);
@@ -93,13 +94,23 @@ export function Item({ focused, index, item, selected, tabId }: ItemProps) {
         setSelectedItemIds([]);
         setMode("edit");
       }}
-      onDragStart={(event) => {
-        const draggedIds = selectedItemIds.includes(item.id) ? selectedItemIds : [item.id];
-        setSelectedItemIds(draggedIds);
-        event.dataTransfer.effectAllowed = "move";
-        event.dataTransfer.setData("application/x-nota-items", JSON.stringify(draggedIds));
-      }}
     >
+      <button
+        className="item-drag-handle"
+        type="button"
+        draggable
+        aria-label="Drag item"
+        onClick={(event) => event.stopPropagation()}
+        onDragStart={(event) => {
+          event.stopPropagation();
+          const draggedIds = selectedItemIds.includes(item.id) ? selectedItemIds : [item.id];
+          setSelectedItemIds(draggedIds);
+          event.dataTransfer.effectAllowed = "move";
+          event.dataTransfer.setData(ITEM_DRAG_MIME, createItemDragPayload(draggedIds));
+        }}
+      >
+        <GripVertical size={14} strokeWidth={1.75} />
+      </button>
       <button
         className="item-check"
         type="button"

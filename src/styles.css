@@ -158,6 +158,11 @@ input {
   max-width: 148px;
 }
 
+.tab-wrap.drop-target .tab-pill {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
 .tab-title-input {
   width: 120px;
   border: 0;
@@ -246,7 +251,7 @@ input {
 .item-row {
   display: grid;
   min-height: 32px;
-  grid-template-columns: 24px 1fr;
+  grid-template-columns: 16px 24px 1fr;
   align-items: start;
   border-left: 2px solid transparent;
   border-radius: var(--radius);
@@ -261,6 +266,22 @@ input {
 
 .item-row.selected {
   background: var(--surface-hover);
+}
+
+.item-drag-handle {
+  display: grid;
+  width: 16px;
+  height: 18px;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: grab;
+  padding: 0;
+}
+
+.item-drag-handle:active {
+  cursor: grabbing;
 }
 
 .item-check {
