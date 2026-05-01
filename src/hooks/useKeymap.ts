@@ -31,11 +31,6 @@ export function useKeymap({ settingsOpen, setSettingsOpen }: KeymapOptions) {
         return;
       }
 
-      if (event.key === "Escape" && store.archiveOpen) {
-        store.setArchiveOpen(false);
-        return;
-      }
-
       if (event.key === "Escape" && settingsOpen) {
         setSettingsOpen(false);
         return;

@@ -359,6 +359,10 @@ input {
   padding: 8px 0;
 }
 
+.archive-row.focused {
+  background: var(--accent-muted);
+}
+
 .archive-row button {
   min-width: 0;
   border: 0;
@@ -383,4 +387,40 @@ input {
 .archive-tag.orphan {
   opacity: 0.5;
   text-decoration: line-through;
+}
+
+.archive-clear {
+  height: 32px;
+  border: 0;
+  border-top: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.archive-clear.focused {
+  color: var(--text-primary);
+  background: var(--accent-muted);
+}
+
+.archive-restore-prompt {
+  display: grid;
+  gap: 4px;
+  border-bottom: 1px solid var(--border);
+  padding: 8px 0;
+}
+
+.archive-restore-prompt button {
+  min-height: 28px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  text-align: left;
+}
+
+.archive-restore-prompt button.active {
+  border-color: var(--accent);
+  color: var(--text-primary);
 }
