@@ -18,7 +18,11 @@ export function AboutTab() {
         <h3>nota</h3>
         <p>Version {version}</p>
         <p>A keyboard-first to-do list for developers.</p>
-        <button type="button" onClick={() => void invoke("open_url", { url: "https://github.com/user/nota" })}>
+        <button
+          data-settings-focusable
+          type="button"
+          onClick={() => void invoke("open_url", { url: "https://github.com/user/nota" })}
+        >
           Repository
         </button>
       </div>

@@ -18,6 +18,10 @@
   color: var(--text-primary);
 }
 
+[data-settings-focusable]:focus {
+  border-color: var(--accent);
+}
+
 .settings-section {
   display: flex;
   flex: 1;
