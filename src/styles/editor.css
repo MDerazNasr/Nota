@@ -32,3 +32,26 @@
 .slash-menu-item:hover {
   background: var(--accent-muted);
 }
+
+.link-popup {
+  position: fixed;
+  z-index: 60;
+  display: grid;
+  width: 220px;
+  gap: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 24%);
+  padding: 8px;
+}
+
+.link-popup input {
+  height: 28px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text-primary);
+  font-size: 12px;
+  padding: 0 8px;
+}

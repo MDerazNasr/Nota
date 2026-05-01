@@ -4,7 +4,7 @@ import { filterSlashCommands, nextSlashIndex } from "./slashCommands";
 describe("slash commands", () => {
   it("filters commands by query", () => {
     expect(filterSlashCommands("i")).toEqual(["italic"]);
-    expect(filterSlashCommands("")).toEqual(["bold", "italic", "underline"]);
+    expect(filterSlashCommands("")).toEqual(["bold", "italic", "underline", "link"]);
   });
 
   it("wraps selected menu index", () => {
