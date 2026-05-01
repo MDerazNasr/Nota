@@ -247,10 +247,20 @@ input {
   text-decoration: line-through;
 }
 
-.item-content {
+.item-row .ProseMirror {
   min-width: 0;
+  min-height: 16px;
   line-height: 1.35;
   overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.item-row .ProseMirror p {
+  margin: 0;
+}
+
+.item-row .ProseMirror-focused {
+  outline: none;
 }
 
 .limit-row {
