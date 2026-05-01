@@ -14,12 +14,12 @@ export function AboutTab() {
 
   return (
     <section className="settings-section" aria-label="About nota">
-      <div className="about-block">
+      <div className="about-block" data-settings-row="about" tabIndex={-1}>
         <h3>nota</h3>
         <p>Version {version}</p>
         <p>A keyboard-first to-do list for developers.</p>
         <button
-          data-settings-focusable
+          data-settings-primary
           type="button"
           onClick={() => void invoke("open_url", { url: "https://github.com/user/nota" })}
         >

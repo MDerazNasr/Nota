@@ -26,13 +26,19 @@ type LinkPopupState = {
 
 type ItemProps = {
   item: ItemModel;
+  dropPosition: "before" | "after" | null;
   focused: boolean;
   index: number;
   selected: boolean;
   tabId: string;
 };
 
-export function Item({ focused, index, item, selected, tabId }: ItemProps) {
+type PointerDragTarget =
+  | { kind: "item"; itemId: string; position: "before" | "after"; tabId: string }
+  | { kind: "tab"; tabId: string }
+  | null;
+
+export function Item({ dropPosition, focused, index, item, selected, tabId }: ItemProps) {
   const mode = useNotesStore((state) => state.mode);
   const setCursorIndex = useNotesStore((state) => state.setCursorIndex);
   const setMode = useNotesStore((state) => state.setMode);
@@ -40,7 +46,9 @@ export function Item({ focused, index, item, selected, tabId }: ItemProps) {
   const cancelItemDrag = useNotesStore((state) => state.cancelItemDrag);
   const checkItem = useNotesStore((state) => state.checkItem);
   const finishItemDrag = useNotesStore((state) => state.finishItemDrag);
+  const finishItemDragAtItem = useNotesStore((state) => state.finishItemDragAtItem);
   const setSelectedItemIds = useNotesStore((state) => state.setSelectedItemIds);
+  const setItemDropTarget = useNotesStore((state) => state.setItemDropTarget);
   const setDropTargetTabId = useNotesStore((state) => state.setDropTargetTabId);
   const startItemDrag = useNotesStore((state) => state.startItemDrag);
   const toggleItemSelection = useNotesStore((state) => state.toggleItemSelection);
@@ -148,8 +156,10 @@ export function Item({ focused, index, item, selected, tabId }: ItemProps) {
 
   return (
     <article
-      className={rowClassName(focused, selected)}
+      className={rowClassName(focused, selected, dropPosition)}
+      data-item-id={item.id}
       data-state={item.state}
+      data-tab-id={tabId}
       onClick={(event) => {
         if (event.metaKey || event.ctrlKey || event.shiftKey) {
           toggleItemSelection(item.id);
@@ -178,10 +188,15 @@ export function Item({ focused, index, item, selected, tabId }: ItemProps) {
           startItemDrag(draggedIds);
 
           const handlePointerMove = (pointerEvent: PointerEvent) => {
-            setDropTargetTabId(getTabIdAtPoint(pointerEvent.clientX, pointerEvent.clientY));
+            updatePointerDragTarget(getPointerDragTarget(pointerEvent.clientX, pointerEvent.clientY));
           };
           const handlePointerUp = (pointerEvent: PointerEvent) => {
-            finishItemDrag(getTabIdAtPoint(pointerEvent.clientX, pointerEvent.clientY));
+            const target = getPointerDragTarget(pointerEvent.clientX, pointerEvent.clientY);
+            if (target?.kind === "item") {
+              finishItemDragAtItem(target);
+            } else {
+              finishItemDrag(target?.tabId ?? null);
+            }
             cleanupDragListeners();
           };
           const handlePointerCancel = () => {
@@ -197,6 +212,16 @@ export function Item({ focused, index, item, selected, tabId }: ItemProps) {
           window.addEventListener("pointermove", handlePointerMove);
           window.addEventListener("pointerup", handlePointerUp);
           window.addEventListener("pointercancel", handlePointerCancel);
+
+          const updatePointerDragTarget = (target: PointerDragTarget) => {
+            if (target?.kind === "item") {
+              setItemDropTarget(target);
+              setDropTargetTabId(null);
+            } else {
+              setItemDropTarget(null);
+              setDropTargetTabId(target?.tabId ?? null);
+            }
+          };
         }}
       >
         <GripVertical size={14} strokeWidth={1.75} />
@@ -234,15 +259,38 @@ export function Item({ focused, index, item, selected, tabId }: ItemProps) {
   );
 }
 
-function rowClassName(focused: boolean, selected: boolean) {
-  return ["item-row", focused ? "focused" : "", selected ? "selected" : ""].filter(Boolean).join(" ");
+function rowClassName(focused: boolean, selected: boolean, dropPosition: "before" | "after" | null) {
+  return [
+    "item-row",
+    focused ? "focused" : "",
+    selected ? "selected" : "",
+    dropPosition ? `drop-${dropPosition}` : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 }
 
-function getTabIdAtPoint(x: number, y: number) {
+function getPointerDragTarget(x: number, y: number): PointerDragTarget {
   const target = document.elementFromPoint(x, y);
-  const tab = target instanceof HTMLElement ? target.closest<HTMLElement>("[data-tab-id]") : null;
 
-  return tab?.dataset.tabId ?? null;
+  if (!(target instanceof HTMLElement)) {
+    return null;
+  }
+
+  const item = target.closest<HTMLElement>("[data-item-id][data-tab-id]");
+
+  if (item) {
+    const rect = item.getBoundingClientRect();
+    return {
+      kind: "item",
+      itemId: item.dataset.itemId ?? "",
+      position: y < rect.top + rect.height / 2 ? "before" : "after",
+      tabId: item.dataset.tabId ?? "",
+    };
+  }
+
+  const tab = target.closest<HTMLElement>(".tab-bar [data-tab-id]");
+  return tab?.dataset.tabId ? { kind: "tab", tabId: tab.dataset.tabId } : null;
 }
 
 function readSlashState(editor: Editor): SlashState | null {

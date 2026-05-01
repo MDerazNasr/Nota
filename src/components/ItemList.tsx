@@ -8,6 +8,7 @@ export function ItemList() {
   const activeTabId = useNotesStore((state) => state.activeTabId);
   const archive = useNotesStore((state) => state.archive);
   const cursorIndex = useNotesStore((state) => state.cursorIndex);
+  const itemDropTarget = useNotesStore((state) => state.itemDropTarget);
   const selectedItemIds = useNotesStore((state) => state.selectedItemIds);
   const setArchiveOpen = useNotesStore((state) => state.setArchiveOpen);
   const itemLimit = useSettingsStore((state) => state.itemLimit);
@@ -25,6 +26,7 @@ export function ItemList() {
             index={index}
             item={item}
             key={item.id}
+            dropPosition={itemDropTarget?.itemId === item.id ? itemDropTarget.position : null}
             selected={selectedItemIds.includes(item.id)}
             tabId={activeTab.id}
           />
