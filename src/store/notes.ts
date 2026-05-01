@@ -3,6 +3,13 @@ import { nanoid } from "nanoid";
 import { create } from "zustand";
 import { createDefaultAppState, createDefaultTab, EMPTY_DOC } from "../lib/defaults";
 import type { AppMode, AppState, ArchivedItem, Item, Tab } from "../lib/types";
+import {
+  buildMoveSelectionState,
+  buildMoveItemsState,
+  buildReorderItemsState,
+  reorderSelectedItems,
+  type ItemDropTarget,
+} from "./notesMovement";
 import { loadNotes, saveNotes } from "./persist";
 import { useSettingsStore } from "./settings";
 
@@ -15,6 +22,8 @@ type NotesStore = AppState & {
   draggingItemIds: string[];
   dropTargetTabId: string | null;
   itemDropTarget: ItemDropTarget | null;
+  selectionAnchorId: string | null;
+  undoStack: AppState[];
   hydrated: boolean;
   hydrateNotes: () => Promise<void>;
   createTab: () => void;
@@ -30,6 +39,11 @@ type NotesStore = AppState & {
   moveSelectedItemsToTab: (targetTabId: string) => void;
   setSelectedItemIds: (itemIds: string[]) => void;
   toggleItemSelection: (itemId: string) => void;
+  enterMoveMode: () => void;
+  exitMoveMode: () => void;
+  extendMoveSelection: (direction: "up" | "down", range: boolean) => void;
+  reorderMoveSelection: (direction: "up" | "down") => void;
+  moveSelectionToAdjacentTab: (direction: "left" | "right") => void;
   clearSelectedItems: () => void;
   startItemDrag: (itemIds: string[]) => void;
   setDropTargetTabId: (tabId: string | null) => void;
@@ -45,12 +59,7 @@ type NotesStore = AppState & {
   moveCursor: (direction: "up" | "down") => void;
   setMode: (mode: AppMode) => void;
   setArchiveOpen: (open: boolean) => void;
-};
-
-type ItemDropTarget = {
-  tabId: string;
-  itemId: string;
-  position: "before" | "after";
+  undoLastChange: () => void;
 };
 
 const initialState = createDefaultAppState();
@@ -65,6 +74,8 @@ export const useNotesStore = create<NotesStore>((set, get) => ({
   draggingItemIds: [],
   dropTargetTabId: null,
   itemDropTarget: null,
+  selectionAnchorId: null,
+  undoStack: [],
   hydrated: false,
   hydrateNotes: async () => {
     const state = await loadNotes();
@@ -171,10 +182,12 @@ export const useNotesStore = create<NotesStore>((set, get) => ({
     commit(set, get, (state) => removeItemState(state, tabId, itemId));
   },
   moveItemsToTab: (itemIds, targetTabId) => {
-    commit(set, get, (state) => buildMoveItemsState(state, itemIds, targetTabId));
+    commit(set, get, (state) => buildMoveItemsState(state, itemIds, targetTabId, useSettingsStore.getState().itemLimit));
   },
   moveSelectedItemsToTab: (targetTabId) => {
-    commit(set, get, (state) => buildMoveItemsState(state, state.selectedItemIds, targetTabId));
+    commit(set, get, (state) =>
+      buildMoveItemsState(state, state.selectedItemIds, targetTabId, useSettingsStore.getState().itemLimit),
+    );
   },
   setSelectedItemIds: (selectedItemIds) => set({ selectedItemIds }),
   toggleItemSelection: (itemId) => {
@@ -190,6 +203,47 @@ export const useNotesStore = create<NotesStore>((set, get) => ({
       return { selectedItemIds: [...selected], mode: "nav" };
     });
   },
+  enterMoveMode: () => {
+    const state = get();
+    const tab = activeTab(state);
+    const item = tab?.items[state.cursorIndex];
+
+    if (!tab || !item) {
+      return;
+    }
+
+    const selectedItemIds = state.selectedItemIds.includes(item.id) ? state.selectedItemIds : [item.id];
+    set({ mode: "move", selectedItemIds, selectionAnchorId: item.id });
+  },
+  exitMoveMode: () => set({ mode: "nav", itemDropTarget: null, selectionAnchorId: null }),
+  extendMoveSelection: (direction, range) => {
+    set((state) => buildMoveSelectionState(state, direction, range));
+  },
+  reorderMoveSelection: (direction) => {
+    commit(set, get, (state) => reorderSelectedItems(state, direction));
+  },
+  moveSelectionToAdjacentTab: (direction) => {
+    commit(set, get, (state) => {
+      const currentIndex = state.tabs.findIndex((tab) => tab.id === state.activeTabId);
+      const offset = direction === "right" ? 1 : -1;
+      const target = state.tabs[currentIndex + offset];
+
+      if (!target) {
+        return {};
+      }
+
+      const moved = buildMoveItemsState(state, state.selectedItemIds, target.id, useSettingsStore.getState().itemLimit);
+      const movedTab = moved.tabs?.find((tab) => tab.id === target.id);
+      const movedIds = state.selectedItemIds.filter((id) => movedTab?.items.some((item) => item.id === id));
+
+      return {
+        ...moved,
+        mode: "move",
+        selectedItemIds: movedIds,
+        selectionAnchorId: movedIds[0] ?? null,
+      };
+    });
+  },
   clearSelectedItems: () => set({ selectedItemIds: [] }),
   startItemDrag: (draggingItemIds) => set({ draggingItemIds, dropTargetTabId: null, itemDropTarget: null, mode: "nav" }),
   setDropTargetTabId: (dropTargetTabId) => set({ dropTargetTabId }),
@@ -201,7 +255,7 @@ export const useNotesStore = create<NotesStore>((set, get) => ({
     }
 
     commit(set, get, (state) => ({
-      ...buildMoveItemsState(state, state.draggingItemIds, targetTabId),
+      ...buildMoveItemsState(state, state.draggingItemIds, targetTabId, useSettingsStore.getState().itemLimit),
       draggingItemIds: [],
       dropTargetTabId: null,
       itemDropTarget: null,
@@ -306,6 +360,26 @@ export const useNotesStore = create<NotesStore>((set, get) => ({
   },
   setMode: (mode) => set({ mode }),
   setArchiveOpen: (archiveOpen) => set({ archiveOpen }),
+  undoLastChange: () => {
+    const previous = get().undoStack.at(-1);
+
+    if (!previous) {
+      return;
+    }
+
+    set((state) => ({
+      ...previous,
+      cursorIndex: cursorForTab(previous.tabs.find((tab) => tab.id === previous.activeTabId)),
+      mode: "nav",
+      selectedItemIds: [],
+      draggingItemIds: [],
+      dropTargetTabId: null,
+      itemDropTarget: null,
+      selectionAnchorId: null,
+      undoStack: state.undoStack.slice(0, -1),
+    }));
+    void saveNotes(previous);
+  },
 }));
 
 function commit(
@@ -313,8 +387,17 @@ function commit(
   get: () => NotesStore,
   recipe: (state: NotesStore) => Partial<NotesStore>,
 ) {
+  const before = toAppState(get());
   set((state) => recipe(state));
+  const after = toAppState(get());
+  if (hasStateChanged(before, after)) {
+    set((state) => ({ undoStack: [...state.undoStack.slice(-19), before] }));
+  }
   void saveNotes(toAppState(get()));
+}
+
+function hasStateChanged(previous: AppState, next: AppState) {
+  return JSON.stringify(previous) !== JSON.stringify(next);
 }
 
 function toAppState(state: NotesStore): AppState {
@@ -384,95 +467,6 @@ function removeItemState(state: NotesStore, tabId: string, itemId: string): Part
     cursorIndex: clampCursor(index, updatedTab),
     selectedItemIds: state.selectedItemIds.filter((selectedId) => selectedId !== itemId),
   };
-}
-
-function buildMoveItemsState(state: NotesStore, itemIds: string[], targetTabId: string): Partial<NotesStore> {
-  const targetTab = state.tabs.find((tab) => tab.id === targetTabId);
-  const selected = new Set(itemIds);
-
-  if (!targetTab || selected.size === 0) {
-    return {};
-  }
-
-  const movableItems = state.tabs.flatMap((tab) => tab.items.filter((item) => selected.has(item.id)));
-
-  if (movableItems.length === 0 || movableItems.every((item) => targetTab.items.some((target) => target.id === item.id))) {
-    return { selectedItemIds: [], mode: "nav" };
-  }
-
-  const itemLimit = useSettingsStore.getState().itemLimit;
-  const targetSelectedCount = targetTab.items.filter((item) => selected.has(item.id)).length;
-  const capacity = Math.max(0, itemLimit - targetTab.items.length + targetSelectedCount);
-  const itemsToMove = movableItems.slice(0, capacity);
-
-  if (itemsToMove.length === 0) {
-    return {};
-  }
-
-  const movedIds = new Set(itemsToMove.map((item) => item.id));
-  const insertionIndex = targetTab.items.filter((item) => !movedIds.has(item.id)).length;
-  const tabs = state.tabs.map((tab) => {
-    const remainingItems = tab.items.filter((item) => !movedIds.has(item.id));
-
-    if (tab.id === targetTabId) {
-      return {
-        ...tab,
-        items: [...remainingItems, ...itemsToMove],
-      };
-    }
-
-    return {
-      ...tab,
-      items: remainingItems,
-    };
-  });
-
-  return {
-    tabs,
-    activeTabId: targetTabId,
-    cursorIndex: insertionIndex,
-    selectedItemIds: [],
-    mode: "nav",
-  };
-}
-
-function buildReorderItemsState(state: NotesStore, itemIds: string[], target: ItemDropTarget): Partial<NotesStore> {
-  const targetTab = state.tabs.find((tab) => tab.id === target.tabId);
-  const selected = new Set(itemIds);
-
-  if (!targetTab || selected.size === 0 || selected.has(target.itemId)) {
-    return { selectedItemIds: [], mode: "nav" };
-  }
-
-  const itemsToMove = targetTab.items.filter((item) => selected.has(item.id));
-
-  if (itemsToMove.length === 0) {
-    return {};
-  }
-
-  const remainingItems = targetTab.items.filter((item) => !selected.has(item.id));
-  const targetIndex = remainingItems.findIndex((item) => item.id === target.itemId);
-
-  if (targetIndex === -1) {
-    return {};
-  }
-
-  const insertionIndex = targetIndex + (target.position === "after" ? 1 : 0);
-  const nextItems = insertManyAt(remainingItems, insertionIndex, itemsToMove);
-
-  return {
-    tabs: state.tabs.map((tab) => (tab.id === target.tabId ? { ...tab, items: nextItems } : tab)),
-    activeTabId: target.tabId,
-    cursorIndex: insertionIndex,
-    selectedItemIds: [],
-    mode: "nav",
-  };
-}
-
-function insertManyAt<T>(items: T[], index: number, entries: T[]): T[] {
-  const next = [...items];
-  next.splice(index, 0, ...entries);
-  return next;
 }
 
 function restoreArchivedItem(archived: ArchivedItem): Item {
