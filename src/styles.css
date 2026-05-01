@@ -230,26 +230,6 @@ input {
   font-weight: 700;
 }
 
-.settings-tabs {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 4px;
-  padding: 8px;
-}
-
-.settings-tabs button {
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: transparent;
-  color: var(--text-secondary);
-  font-size: 12px;
-}
-
-.settings-tabs button[aria-selected="true"] {
-  border-color: var(--accent);
-  color: var(--text-primary);
-}
-
 .item-row {
   display: grid;
   min-height: 32px;
