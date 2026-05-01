@@ -1,8 +1,10 @@
 mod commands;
+mod window_state;
 
 use commands::{get_app_version, open_url, set_activation_policy, update_global_shortcut};
 use tauri::{Manager, WindowEvent};
 use tauri_plugin_global_shortcut::ShortcutState;
+use window_state::{restore_window_position, save_window_position};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -35,11 +37,21 @@ pub fn run() {
             open_url,
             get_app_version
         ])
+        .setup(|app| {
+            restore_window_position(app.handle());
+            Ok(())
+        })
         .on_window_event(|window, event| {
-            if let WindowEvent::CloseRequested { api, .. } = event {
-                api.prevent_close();
-                let _ = window.hide();
-                // TODO: Add the v1 system tray quit hook when tray support is implemented.
+            match event {
+                WindowEvent::Moved(position) => {
+                    save_window_position(&window.app_handle(), position.x, position.y);
+                }
+                WindowEvent::CloseRequested { api, .. } => {
+                    api.prevent_close();
+                    let _ = window.hide();
+                    // TODO: Add the v1 system tray quit hook when tray support is implemented.
+                }
+                _ => {}
             }
         })
         .run(tauri::generate_context!())

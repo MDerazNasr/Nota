@@ -26,6 +26,11 @@ export function useKeymap({ settingsOpen, setSettingsOpen }: KeymapOptions) {
         return;
       }
 
+      if (event.key === "Escape" && store.archiveOpen) {
+        store.setArchiveOpen(false);
+        return;
+      }
+
       if (event.key === "Escape" && settingsOpen) {
         setSettingsOpen(false);
         return;
@@ -62,6 +67,17 @@ function handleCommandKey(event: KeyboardEvent, setSettingsOpen: (open: boolean)
   if (event.key === "t") {
     event.preventDefault();
     store.createTab();
+    return;
+  }
+
+  if (/^[1-9]$/.test(event.key)) {
+    event.preventDefault();
+    const tab = store.tabs[Number(event.key) - 1];
+
+    if (tab) {
+      store.setActiveTab(tab.id);
+    }
+
     return;
   }
 

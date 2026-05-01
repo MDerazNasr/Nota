@@ -86,4 +86,33 @@ describe("persist", () => {
     expect((data.settings as Settings).fontSize).toBe(13);
     expect(consoleError).toHaveBeenCalled();
   });
+
+  it("merges window position from the settings store root", async () => {
+    setStoreLoaderForTests(
+      (async () =>
+        new MemoryStore({
+          settings: {
+            theme: "light",
+            font: "JetBrains Mono",
+            fontSize: 13,
+            borderRadius: 4,
+            itemLimit: 15,
+            openOnStartup: false,
+            showInDock: true,
+            shortcuts: {
+              toggleWindow: "CommandOrControl+Shift+N",
+              toggleArchive: "CommandOrControl+0",
+              newTab: "CommandOrControl+T",
+              openSettings: "CommandOrControl+,",
+              checkItem: "CommandOrControl+Enter",
+            },
+          },
+          windowPosition: { x: 80, y: 120 },
+        })) as never,
+    );
+
+    const settings = await loadSettings();
+
+    expect(settings.windowPosition).toEqual({ x: 80, y: 120 });
+  });
 });
