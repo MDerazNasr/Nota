@@ -2,7 +2,7 @@ mod commands;
 mod shortcuts;
 mod window_state;
 
-use commands::{get_app_version, open_url, set_activation_policy, update_global_shortcut};
+use commands::{get_app_version, open_url, set_activation_policy, set_menu_bar_icon, update_global_shortcut};
 use shortcuts::register_toggle_shortcut;
 use tauri::{Manager, WindowEvent};
 use tauri_plugin_global_shortcut::ShortcutState;
@@ -35,6 +35,7 @@ pub fn run() {
         )
         .invoke_handler(tauri::generate_handler![
             set_activation_policy,
+            set_menu_bar_icon,
             update_global_shortcut,
             open_url,
             get_app_version

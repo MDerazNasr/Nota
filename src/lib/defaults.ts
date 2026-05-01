@@ -27,6 +27,7 @@ export const DEFAULT_SETTINGS: Settings = {
   itemLimit: 15,
   openOnStartup: false,
   showInDock: true,
+  showInMenuBar: false,
   shortcuts: DEFAULT_SHORTCUTS,
 };
 
