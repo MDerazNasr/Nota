@@ -48,7 +48,15 @@ export type FontOption =
   | "Monaco"
   | "Cascadia Code"
   | "Source Code Pro"
-  | "Recursive Mono";
+  | "Recursive Mono"
+  | "Hack"
+  | "Iosevka"
+  | "Inconsolata"
+  | "Roboto Mono"
+  | "Space Mono"
+  | "Ubuntu Mono"
+  | "CommitMono"
+  | "Berkeley Mono";
 
 export type ShortcutMap = {
   toggleWindow: string;
