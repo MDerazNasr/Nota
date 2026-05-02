@@ -49,6 +49,16 @@ const REFERENCE_SECTIONS: Array<{
   rows: Array<{ keyCombo: string; label: string }>;
 }> = [
   {
+    label: "App navigation",
+    rows: [
+      { keyCombo: "J/K or Up/Down", label: "Move cursor" },
+      { keyCombo: "H/L", label: "Switch tabs" },
+      { keyCombo: "Up/Down", label: "Move settings selector" },
+      { keyCombo: "Left/Right", label: "Adjust selected setting" },
+      { keyCombo: "Left/Right on theme", label: "Cycle color schemes" },
+    ],
+  },
+  {
     label: "Slash menu",
     rows: [
       { keyCombo: "/link", label: "Create link" },
@@ -78,10 +88,10 @@ const REFERENCE_SECTIONS: Array<{
   {
     label: "Move mode",
     rows: [
-      { keyCombo: "Shift+J/K", label: "Range select" },
-      { keyCombo: "Cmd+J/K", label: "Add one item" },
-      { keyCombo: "J/K", label: "Reorder selection" },
-      { keyCombo: "H/L", label: "Move to adjacent tab" },
+      { keyCombo: "Shift+J/K or Shift+Up/Down", label: "Range select" },
+      { keyCombo: "Cmd+J/K or Cmd+Up/Down", label: "Add one item" },
+      { keyCombo: "J/K or Up/Down", label: "Reorder selection" },
+      { keyCombo: "H/L or Left/Right", label: "Move to adjacent tab" },
     ],
   },
 ];

@@ -43,10 +43,10 @@ export function SettingsPanel({ onClose, open }: SettingsPanelProps) {
 
       const rows = getSettingsRows(panelRef.current);
 
-      if (event.key === "j") {
+      if (event.key === "j" || event.key === "ArrowDown") {
         event.preventDefault();
         setFocusIndex((current) => moveSettingsFocus(current, 1, rows.length));
-      } else if (event.key === "k") {
+      } else if (event.key === "k" || event.key === "ArrowUp") {
         event.preventDefault();
         setFocusIndex((current) => moveSettingsFocus(current, -1, rows.length));
       } else if (event.key === "h") {
