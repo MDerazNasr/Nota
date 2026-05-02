@@ -6,6 +6,7 @@ import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
 import Underline from "@tiptap/extension-underline";
 import { GripVertical } from "lucide-react";
+import { handleEditorModeKey, type ItemEditorMode } from "../lib/itemEditorVim";
 import { normalizeHref } from "../lib/links";
 import { filterSlashCommands, nextSlashIndex } from "../lib/slashCommands";
 import type { Item as ItemModel } from "../lib/types";
@@ -53,6 +54,7 @@ export function Item({ dropPosition, focused, index, item, selected, tabId }: It
   const startItemDrag = useNotesStore((state) => state.startItemDrag);
   const toggleItemSelection = useNotesStore((state) => state.toggleItemSelection);
   const updateItemContent = useNotesStore((state) => state.updateItemContent);
+  const [editorMode, setEditorMode] = useState<ItemEditorMode>("insert");
   const [slashState, setSlashState] = useState<SlashState | null>(null);
   const [linkPopup, setLinkPopup] = useState<LinkPopupState | null>(null);
   const slashItems = useMemo(() => filterSlashCommands(slashState?.query ?? ""), [slashState?.query]);
@@ -78,6 +80,13 @@ export function Item({ dropPosition, focused, index, item, selected, tabId }: It
         class: "item-editor",
       },
       handleKeyDown: (view, event) => {
+        if (handleEditorModeKey(event, editor, editorMode, setEditorMode, () => {
+          setMode("nav");
+          view.dom.blur();
+        })) {
+          return true;
+        }
+
         if (slashState) {
           const handled = handleSlashKey(event, slashState, slashItems, setSlashState, (command) => {
             applySlashCommand(editor, slashState, command, setLinkPopup);
@@ -90,8 +99,7 @@ export function Item({ dropPosition, focused, index, item, selected, tabId }: It
 
         if (event.key === "Escape") {
           event.preventDefault();
-          setMode("nav");
-          view.dom.blur();
+          setEditorMode("normal");
           return true;
         }
 
@@ -135,8 +143,12 @@ export function Item({ dropPosition, focused, index, item, selected, tabId }: It
     },
     onFocus: () => setMode("edit"),
     onBlur: () => {
-      setMode("nav");
       setSlashState(null);
+      window.setTimeout(() => {
+        if (!(document.activeElement instanceof HTMLElement) || !document.activeElement.closest(".link-popup")) {
+          useNotesStore.getState().setMode("nav");
+        }
+      }, 0);
     },
     onUpdate: ({ editor: activeEditor }) => {
       updateItemContent(tabId, item.id, activeEditor.getJSON());
@@ -150,6 +162,7 @@ export function Item({ dropPosition, focused, index, item, selected, tabId }: It
 
   useEffect(() => {
     if (editable) {
+      setEditorMode("insert");
       editor?.commands.focus("end");
     }
   }, [editable, editor]);
@@ -373,17 +386,9 @@ function applySlashCommand(
   if (command === "link") {
     chain.run();
     setLinkPopup({ position: slashState.position });
-    return;
-  }
-
-  if (command === "bold") {
-    chain.toggleBold().run();
-  } else if (command === "italic") {
-    chain.toggleItalic().run();
-  } else if (command === "underline") {
-    chain.toggleUnderline().run();
   }
 }
+
 
 function insertLink(editor: Editor | null, label: string, url: string) {
   editor

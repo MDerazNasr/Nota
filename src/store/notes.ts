@@ -215,7 +215,7 @@ export const useNotesStore = create<NotesStore>((set, get) => ({
     const selectedItemIds = state.selectedItemIds.includes(item.id) ? state.selectedItemIds : [item.id];
     set({ mode: "move", selectedItemIds, selectionAnchorId: item.id });
   },
-  exitMoveMode: () => set({ mode: "nav", itemDropTarget: null, selectionAnchorId: null }),
+  exitMoveMode: () => set({ mode: "nav", itemDropTarget: null, selectedItemIds: [], selectionAnchorId: null }),
   extendMoveSelection: (direction, range) => {
     set((state) => buildMoveSelectionState(state, direction, range));
   },

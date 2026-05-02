@@ -3,8 +3,8 @@ import { filterSlashCommands, nextSlashIndex } from "./slashCommands";
 
 describe("slash commands", () => {
   it("filters commands by query", () => {
-    expect(filterSlashCommands("i")).toEqual(["italic"]);
-    expect(filterSlashCommands("")).toEqual(["bold", "italic", "underline", "link"]);
+    expect(filterSlashCommands("b")).toEqual([]);
+    expect(filterSlashCommands("")).toEqual(["link"]);
   });
 
   it("wraps selected menu index", () => {

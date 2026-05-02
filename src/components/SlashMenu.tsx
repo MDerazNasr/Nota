@@ -1,6 +1,6 @@
 import { createPortal } from "react-dom";
 
-export type SlashCommand = "bold" | "italic" | "underline" | "link";
+export type SlashCommand = "link";
 
 type SlashMenuProps = {
   items: SlashCommand[];
@@ -11,9 +11,6 @@ type SlashMenuProps = {
 };
 
 const DESCRIPTIONS: Record<SlashCommand, string> = {
-  bold: "Bold text",
-  italic: "Italic text",
-  underline: "Underline text",
   link: "Insert hyperlink",
 };
 

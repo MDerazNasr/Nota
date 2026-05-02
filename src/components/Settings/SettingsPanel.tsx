@@ -213,5 +213,5 @@ function shouldIgnoreSettingsKey(target: EventTarget | null) {
     return false;
   }
 
-  return target.closest("[data-hotkey-capturing='true'], select, input") !== null;
+  return target.closest("[data-hotkey-capturing='true']") !== null;
 }
