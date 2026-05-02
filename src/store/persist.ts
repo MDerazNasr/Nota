@@ -1,6 +1,7 @@
 import { load } from "@tauri-apps/plugin-store";
 import { createDefaultAppState, createDefaultSettings } from "../lib/defaults";
-import type { AppState, ArchivedItem, Settings, Tab } from "../lib/types";
+import { normalizeTagName } from "../lib/tags";
+import type { AppState, ArchivedItem, Item, ItemTag, Settings, Tab } from "../lib/types";
 
 type StoreLike = {
   get<T>(key: string): Promise<T | undefined>;
@@ -133,15 +134,41 @@ function normalizeAppState(value: unknown): AppState | null {
     return null;
   }
 
-  const tabs = value.tabs.length > 0 ? value.tabs : createDefaultAppState().tabs;
+  const tabs = value.tabs.length > 0 ? value.tabs.map(normalizeTab) : createDefaultAppState().tabs;
   const tabIds = new Set(tabs.map((tab) => tab.id));
   const activeTabId = tabIds.has(value.activeTabId) ? value.activeTabId : tabs[0].id;
   const archive = value.archive.map((item) => ({
     ...item,
+    tags: normalizeTags(item.tags),
     sourceTabExists: tabIds.has(item.sourceTabId),
   }));
 
   return { tabs, activeTabId, archive };
+}
+
+function normalizeTab(tab: Tab): Tab {
+  return {
+    ...tab,
+    items: tab.items.map(normalizeItem),
+  };
+}
+
+function normalizeItem(item: Item): Item {
+  return {
+    ...item,
+    tags: normalizeTags(item.tags),
+  };
+}
+
+function normalizeTags(tags: unknown): ItemTag[] {
+  if (!Array.isArray(tags)) {
+    return [];
+  }
+
+  return tags
+    .filter(isItemTag)
+    .map((tag) => ({ ...tag, name: normalizeTagName(tag.name) }))
+    .filter((tag) => tag.name.length > 0);
 }
 
 function normalizeSettings(value: unknown): Settings | null {
@@ -180,6 +207,18 @@ function isTab(value: unknown): value is Tab {
     typeof value.id === "string" &&
     typeof value.title === "string" &&
     Array.isArray(value.items) &&
+    value.items.every(isItem) &&
+    typeof value.createdAt === "number"
+  );
+}
+
+function isItem(value: unknown): value is Item {
+  return (
+    isRecord(value) &&
+    typeof value.id === "string" &&
+    isRecord(value.content) &&
+    (value.state === "active" || value.state === "done") &&
+    (value.tags === undefined || (Array.isArray(value.tags) && value.tags.every(isItemTag))) &&
     typeof value.createdAt === "number"
   );
 }
@@ -188,10 +227,16 @@ function isArchivedItem(value: unknown): value is ArchivedItem {
   return (
     isRecord(value) &&
     typeof value.id === "string" &&
+    isRecord(value.content) &&
+    (value.tags === undefined || (Array.isArray(value.tags) && value.tags.every(isItemTag))) &&
     typeof value.archivedAt === "number" &&
     typeof value.sourceTabId === "string" &&
     typeof value.sourceTabTitle === "string"
   );
+}
+
+function isItemTag(value: unknown): value is ItemTag {
+  return isRecord(value) && typeof value.name === "string" && typeof value.color === "string";
 }
 
 function isSettings(value: unknown): value is Settings {

@@ -2,10 +2,16 @@ import type { JSONContent } from "@tiptap/core";
 
 export type ItemState = "active" | "done";
 
+export type ItemTag = {
+  name: string;
+  color: string;
+};
+
 export type Item = {
   id: string;
   content: JSONContent;
   state: ItemState;
+  tags: ItemTag[];
   createdAt: number;
 };
 
@@ -19,6 +25,7 @@ export type Tab = {
 export type ArchivedItem = {
   id: string;
   content: JSONContent;
+  tags?: ItemTag[];
   archivedAt: number;
   sourceTabId: string;
   sourceTabTitle: string;

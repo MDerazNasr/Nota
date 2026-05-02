@@ -1,17 +1,12 @@
 import { createPortal } from "react-dom";
-
-export type SlashCommand = "link";
+import type { SlashMenuItem } from "../lib/slashCommands";
 
 type SlashMenuProps = {
-  items: SlashCommand[];
+  items: SlashMenuItem[];
   position: { left: number; top: number };
   selectedIndex: number;
-  onSelect: (command: SlashCommand) => void;
+  onSelect: (item: SlashMenuItem) => void;
   onDismiss: () => void;
-};
-
-const DESCRIPTIONS: Record<SlashCommand, string> = {
-  link: "Insert hyperlink",
 };
 
 export function SlashMenu({ items, position, selectedIndex, onSelect, onDismiss }: SlashMenuProps) {
@@ -20,12 +15,15 @@ export function SlashMenu({ items, position, selectedIndex, onSelect, onDismiss 
       {items.map((item, index) => (
         <button
           className={index === selectedIndex ? "slash-menu-item active" : "slash-menu-item"}
-          key={item}
+          key={item.id}
           type="button"
           onClick={() => onSelect(item)}
         >
-          <span>/{item}</span>
-          <small>{DESCRIPTIONS[item]}</small>
+          <span className="slash-menu-label">
+            {item.kind === "tag" ? <span className="slash-menu-dot" style={{ backgroundColor: item.tag.color }} /> : null}
+            {item.label}
+          </span>
+          <small>{item.description}</small>
         </button>
       ))}
     </div>,
