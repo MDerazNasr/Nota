@@ -20,7 +20,7 @@ describe("notes store", () => {
     vi.useFakeTimers();
     setStoreLoaderForTests((async () => new MemoryStore()) as never);
     resetNotesState(createDefaultAppState());
-    useSettingsStore.setState({ itemLimit: 15 });
+    useSettingsStore.setState({ itemLimit: 15, archiveCompletedItems: true });
   });
 
   afterEach(() => {
@@ -87,6 +87,25 @@ describe("notes store", () => {
     expect(activeTab().items[0].id).toBe(itemId);
     expect(restoredState.archive).toEqual([]);
     expect(restoredState.cursorIndex).toBe(0);
+  });
+
+  it("crosses completed items out and moves them to the bottom when archive is inactive", () => {
+    useSettingsStore.setState({ archiveCompletedItems: false });
+    useNotesStore.getState().createItem("below");
+    useNotesStore.getState().setMode("nav");
+    useNotesStore.getState().createItem("below");
+
+    const tab = activeTab();
+    const ids = tab.items.map((item) => item.id);
+
+    useNotesStore.getState().checkItem(tab.id, ids[0]);
+
+    const next = activeTab();
+
+    expect(next.items.map((item) => item.id)).toEqual([ids[1], ids[0]]);
+    expect(next.items[1].state).toBe("done");
+    expect(useNotesStore.getState().archive).toEqual([]);
+    expect(useNotesStore.getState().cursorIndex).toBe(1);
   });
 
   it("persists item content updates from the editor", () => {

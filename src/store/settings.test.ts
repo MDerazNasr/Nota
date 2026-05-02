@@ -44,4 +44,10 @@ describe("settings store", () => {
     expect(useSettingsStore.getState().theme).toBe("dark-zinc");
     expect(useSettingsStore.getState().fontSize).toBe(18);
   });
+
+  it("updates archive completion behavior", () => {
+    useSettingsStore.getState().setArchiveCompletedItems(false);
+
+    expect(useSettingsStore.getState().archiveCompletedItems).toBe(false);
+  });
 });
