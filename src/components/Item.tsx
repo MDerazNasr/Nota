@@ -180,6 +180,12 @@ export function Item({ dropPosition, focused, index, item, selected, tabId }: It
   }, [editable, editor]);
 
   useEffect(() => {
+    if (focused) {
+      rowRef.current?.scrollIntoView({ block: "nearest" });
+    }
+  }, [focused]);
+
+  useEffect(() => {
     if (!editor || !editable || editorMode === "insert") {
       setCursorRect(null);
       return;
