@@ -1,4 +1,7 @@
 import type { JSONContent } from "@tiptap/core";
+import type { FontOption } from "./fonts";
+
+export type { FontOption } from "./fonts";
 
 export type ItemState = "active" | "done";
 
@@ -37,26 +40,6 @@ export type AppState = {
   activeTabId: string;
   archive: ArchivedItem[];
 };
-
-export type FontOption =
-  | "JetBrains Mono"
-  | "Fira Code"
-  | "IBM Plex Mono"
-  | "Geist Mono"
-  | "SF Mono"
-  | "Menlo"
-  | "Monaco"
-  | "Cascadia Code"
-  | "Source Code Pro"
-  | "Recursive Mono"
-  | "Hack"
-  | "Iosevka"
-  | "Inconsolata"
-  | "Roboto Mono"
-  | "Space Mono"
-  | "Ubuntu Mono"
-  | "CommitMono"
-  | "Berkeley Mono";
 
 export type ShortcutMap = {
   toggleWindow: string;
