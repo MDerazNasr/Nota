@@ -44,7 +44,7 @@
   align-items: center;
   gap: 8px;
   border-bottom: 1px solid var(--border);
-  padding: 4px 0;
+  padding: 4px 8px;
 }
 
 .setting-row label {
@@ -151,6 +151,7 @@
   border-bottom: 1px solid var(--border);
   color: var(--text-secondary);
   font-size: 12px;
+  padding: 0 8px;
 }
 
 .toggle-row input {
