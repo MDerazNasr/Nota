@@ -51,11 +51,12 @@ const REFERENCE_SECTIONS: Array<{
   {
     label: "App navigation",
     rows: [
-      { keyCombo: "J/K or Up/Down", label: "Move cursor" },
+      { keyCombo: "J/K", label: "Move cursor" },
       { keyCombo: "H/L", label: "Switch tabs" },
-      { keyCombo: "Up/Down", label: "Move settings selector" },
+      { keyCombo: "J/K", label: "Move settings selector" },
       { keyCombo: "Left/Right", label: "Adjust selected setting" },
       { keyCombo: "Left/Right on theme", label: "Cycle color schemes" },
+      { keyCombo: "Up/Down on theme", label: "Cycle color schemes" },
     ],
   },
   {
@@ -63,7 +64,6 @@ const REFERENCE_SECTIONS: Array<{
     rows: [
       { keyCombo: "/link", label: "Create link" },
       { keyCombo: "/tag", label: "Create or add tag" },
-      { keyCombo: "Up / Down", label: "Move suggestions" },
       { keyCombo: "Enter", label: "Use suggestion" },
     ],
   },
@@ -88,9 +88,9 @@ const REFERENCE_SECTIONS: Array<{
   {
     label: "Move mode",
     rows: [
-      { keyCombo: "Shift+J/K or Shift+Up/Down", label: "Range select" },
-      { keyCombo: "Cmd+J/K or Cmd+Up/Down", label: "Add one item" },
-      { keyCombo: "J/K or Up/Down", label: "Reorder selection" },
+      { keyCombo: "Shift+J/K", label: "Range select" },
+      { keyCombo: "Cmd+J/K", label: "Add one item" },
+      { keyCombo: "J/K", label: "Reorder selection" },
       { keyCombo: "H/L or Left/Right", label: "Move to adjacent tab" },
     ],
   },

@@ -1,6 +1,6 @@
 import type { Editor } from "@tiptap/core";
 import { normalizeHref } from "./links";
-import { nextSlashIndex, type SlashMenuItem } from "./slashCommands";
+import type { SlashMenuItem } from "./slashCommands";
 
 export type SlashState = {
   query: string;
@@ -44,22 +44,9 @@ export function handleSlashKey(
   event: KeyboardEvent,
   slashState: SlashState,
   slashItems: SlashMenuItem[],
-  setSlashState: (state: SlashState | null) => void,
   onSelect: (item: SlashMenuItem) => void,
   onDismiss: () => void,
 ) {
-  if (event.key === "ArrowDown") {
-    event.preventDefault();
-    setSlashState({ ...slashState, selectedIndex: nextSlashIndex(slashState.selectedIndex, "down", slashItems.length) });
-    return true;
-  }
-
-  if (event.key === "ArrowUp") {
-    event.preventDefault();
-    setSlashState({ ...slashState, selectedIndex: nextSlashIndex(slashState.selectedIndex, "up", slashItems.length) });
-    return true;
-  }
-
   if (event.key === "Enter") {
     event.preventDefault();
     const command = slashItems[slashState.selectedIndex];

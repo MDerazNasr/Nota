@@ -2,11 +2,11 @@ export type VerticalDirection = "down" | "up";
 export type HorizontalDirection = "left" | "right";
 
 export function verticalDirectionForKey(key: string): VerticalDirection | null {
-  if (key === "j" || key === "ArrowDown") {
+  if (key === "j") {
     return "down";
   }
 
-  if (key === "k" || key === "ArrowUp") {
+  if (key === "k") {
     return "up";
   }
 
