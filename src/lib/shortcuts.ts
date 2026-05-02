@@ -1,5 +1,6 @@
 export type ShortcutEvent = {
   altKey: boolean;
+  code?: string;
   ctrlKey: boolean;
   key: string;
   metaKey: boolean;
@@ -25,7 +26,7 @@ export function formatShortcut(event: ShortcutEvent) {
     parts.push("Shift");
   }
 
-  parts.push(normalizeKey(event.key));
+  parts.push(normalizeKey(event));
   return parts.join("+");
 }
 
@@ -39,18 +40,23 @@ export function displayShortcut(shortcut: string) {
     .join("Cmd")
     .split("Alt")
     .join("Opt")
+    .replace(/\bKey([A-Z])\b/g, "$1")
     .split("+")
     .join(" + ");
 }
 
-function normalizeKey(key: string) {
-  if (key === " ") {
+function normalizeKey(event: ShortcutEvent) {
+  if (event.altKey && /^Key[A-Z]$/.test(event.code ?? "")) {
+    return event.code as string;
+  }
+
+  if (event.key === " ") {
     return "Space";
   }
 
-  if (key.length === 1) {
-    return key.toUpperCase();
+  if (event.key.length === 1) {
+    return event.key.toUpperCase();
   }
 
-  return key;
+  return event.key;
 }
