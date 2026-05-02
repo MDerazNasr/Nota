@@ -19,3 +19,7 @@ export function tagFocusAfterRemoval(currentIndex: number, tagCountBeforeRemoval
 
   return Math.min(currentIndex, remainingCount - 1);
 }
+
+export function isTagFocusTarget(target: Element | null, row: HTMLElement | null) {
+  return Boolean(target && row?.contains(target) && target.closest(".item-tags"));
+}
