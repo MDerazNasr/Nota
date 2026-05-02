@@ -178,13 +178,20 @@ function normalizeSettings(value: unknown): Settings | null {
     return null;
   }
 
+  const defaults = createDefaultSettings();
+  const shortcuts = {
+    ...defaults.shortcuts,
+    ...value.shortcuts,
+  };
+
+  if (shortcuts.toggleWindow === "CommandOrControl+Shift+N") {
+    shortcuts.toggleWindow = defaults.shortcuts.toggleWindow;
+  }
+
   return {
-    ...createDefaultSettings(),
+    ...defaults,
     ...value,
-    shortcuts: {
-      ...createDefaultSettings().shortcuts,
-      ...value.shortcuts,
-    },
+    shortcuts,
   };
 }
 

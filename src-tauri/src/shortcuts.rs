@@ -2,7 +2,8 @@ use tauri::{AppHandle, Runtime};
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut};
 use tauri_plugin_store::StoreExt;
 
-const DEFAULT_TOGGLE_WINDOW: &str = "CommandOrControl+Shift+N";
+const DEFAULT_TOGGLE_WINDOW: &str = "Alt+Shift+N";
+const OLD_DEFAULT_TOGGLE_WINDOW: &str = "CommandOrControl+Shift+N";
 
 pub fn register_toggle_shortcut<R: Runtime>(app: &AppHandle<R>) {
     let shortcut = load_toggle_shortcut(app);
@@ -28,10 +29,16 @@ fn load_toggle_shortcut<R: Runtime>(app: &AppHandle<R>) -> String {
         return DEFAULT_TOGGLE_WINDOW.to_string();
     };
 
-    store
+    let shortcut = store
         .get("settings")
         .and_then(|settings| settings.get("shortcuts").cloned())
         .and_then(|shortcuts| shortcuts.get("toggleWindow").cloned())
         .and_then(|value| value.as_str().map(ToOwned::to_owned))
-        .unwrap_or_else(|| DEFAULT_TOGGLE_WINDOW.to_string())
+        .unwrap_or_else(|| DEFAULT_TOGGLE_WINDOW.to_string());
+
+    if shortcut == OLD_DEFAULT_TOGGLE_WINDOW {
+        DEFAULT_TOGGLE_WINDOW.to_string()
+    } else {
+        shortcut
+    }
 }
