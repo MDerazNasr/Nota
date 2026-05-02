@@ -6,7 +6,7 @@ use commands::{get_app_version, open_url, set_activation_policy, set_menu_bar_ic
 use shortcuts::register_toggle_shortcut;
 use tauri::{Manager, WindowEvent};
 use tauri_plugin_global_shortcut::ShortcutState;
-use window_state::{restore_window_position, save_window_position};
+use window_state::{restore_window_state, save_window_position, save_window_size};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -41,7 +41,7 @@ pub fn run() {
             get_app_version
         ])
         .setup(|app| {
-            restore_window_position(app.handle());
+            restore_window_state(app.handle());
             register_toggle_shortcut(app.handle());
             Ok(())
         })
@@ -49,6 +49,9 @@ pub fn run() {
             match event {
                 WindowEvent::Moved(position) => {
                     save_window_position(&window.app_handle(), position.x, position.y);
+                }
+                WindowEvent::Resized(size) => {
+                    save_window_size(&window.app_handle(), size.width, size.height);
                 }
                 WindowEvent::CloseRequested { api, .. } => {
                     api.prevent_close();
