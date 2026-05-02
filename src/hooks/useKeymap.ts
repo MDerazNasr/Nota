@@ -16,13 +16,16 @@ export function useKeymap({ settingsOpen, setSettingsOpen }: KeymapOptions) {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       const store = useNotesStore.getState();
+      const shortcut = formatShortcut(event);
+      const shortcuts = useSettingsStore.getState().shortcuts;
+
+      if (handleOverlayShortcut(event, shortcut, setSettingsOpen, settingsOpen)) {
+        return;
+      }
 
       if (isEditableTarget(event.target)) {
         return;
       }
-
-      const shortcut = formatShortcut(event);
-      const shortcuts = useSettingsStore.getState().shortcuts;
 
       if (matchesShortcut(shortcut, shortcuts.checkItem)) {
         handleCheckItem(event);
@@ -44,7 +47,7 @@ export function useKeymap({ settingsOpen, setSettingsOpen }: KeymapOptions) {
       }
 
       if (hasCommandModifier(event)) {
-        handleCommandKey(event, shortcut, setSettingsOpen, settingsOpen);
+        handleCommandKey(event, shortcut);
         return;
       }
 
@@ -68,11 +71,37 @@ function isEditableTarget(target: EventTarget | null) {
   return target.closest("input, textarea, [contenteditable='true']") !== null;
 }
 
-function handleCommandKey(
+function handleOverlayShortcut(
   event: KeyboardEvent,
   shortcut: string,
   setSettingsOpen: (open: boolean) => void,
   settingsOpen: boolean,
+) {
+  const store = useNotesStore.getState();
+  const shortcuts = useSettingsStore.getState().shortcuts;
+
+  if (matchesShortcut(shortcut, shortcuts.toggleArchive)) {
+    event.preventDefault();
+    setSettingsOpen(false);
+    store.setMode("nav");
+    store.setArchiveOpen(!store.archiveOpen);
+    return true;
+  }
+
+  if (matchesShortcut(shortcut, shortcuts.openSettings)) {
+    event.preventDefault();
+    store.setMode("nav");
+    store.setArchiveOpen(false);
+    setSettingsOpen(!settingsOpen);
+    return true;
+  }
+
+  return false;
+}
+
+function handleCommandKey(
+  event: KeyboardEvent,
+  shortcut: string,
 ) {
   const store = useNotesStore.getState();
   const shortcuts = useSettingsStore.getState().shortcuts;
@@ -83,7 +112,7 @@ function handleCommandKey(
     return;
   }
 
-  if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "x") {
+  if (matchesShortcut(shortcut, shortcuts.openItemLink)) {
     event.preventDefault();
     openFocusedItemLink(store);
     return;
@@ -97,20 +126,6 @@ function handleCommandKey(
       store.setActiveTab(tab.id);
     }
 
-    return;
-  }
-
-  if (matchesShortcut(shortcut, shortcuts.toggleArchive)) {
-    event.preventDefault();
-    setSettingsOpen(false);
-    store.setArchiveOpen(!store.archiveOpen);
-    return;
-  }
-
-  if (matchesShortcut(shortcut, shortcuts.openSettings)) {
-    event.preventDefault();
-    store.setArchiveOpen(false);
-    setSettingsOpen(!settingsOpen);
     return;
   }
 
@@ -151,6 +166,8 @@ function handleCheckItem(event: KeyboardEvent) {
 
 function handleNavKey(event: KeyboardEvent, lastDAt: MutableRefObject<number>) {
   const store = useNotesStore.getState();
+  const shortcuts = useSettingsStore.getState().shortcuts;
+  const shortcut = formatShortcut(event);
 
   if (event.key === "j") {
     event.preventDefault();
@@ -158,10 +175,10 @@ function handleNavKey(event: KeyboardEvent, lastDAt: MutableRefObject<number>) {
   } else if (event.key === "k") {
     event.preventDefault();
     store.moveCursor("up");
-  } else if (event.key === "o") {
+  } else if (matchesShortcut(shortcut, shortcuts.createItemBelow)) {
     event.preventDefault();
     store.createItem("below");
-  } else if (event.key === "O") {
+  } else if (matchesShortcut(shortcut, shortcuts.createItemAbove)) {
     event.preventDefault();
     store.createItem("above");
   } else if (event.key === "h") {
@@ -170,22 +187,25 @@ function handleNavKey(event: KeyboardEvent, lastDAt: MutableRefObject<number>) {
   } else if (event.key === "l") {
     event.preventDefault();
     switchTab(1);
-  } else if (event.key === "<") {
+  } else if (matchesShortcut(shortcut, shortcuts.moveTabLeft)) {
     event.preventDefault();
     store.reorderTab(store.activeTabId, "left");
-  } else if (event.key === ">") {
+  } else if (matchesShortcut(shortcut, shortcuts.moveTabRight)) {
     event.preventDefault();
     store.reorderTab(store.activeTabId, "right");
   } else if (event.key === "d") {
     event.preventDefault();
     deleteOnDoubleD(lastDAt);
-  } else if (event.key === " ") {
+  } else if (matchesShortcut(shortcut, shortcuts.deleteItem)) {
+    event.preventDefault();
+    deleteFocusedItem();
+  } else if (matchesShortcut(shortcut, shortcuts.enterMoveMode)) {
     event.preventDefault();
     store.enterMoveMode();
-  } else if (event.key === "u") {
+  } else if (matchesShortcut(shortcut, shortcuts.undo)) {
     event.preventDefault();
     store.undoLastChange();
-  } else if (event.key === "Enter") {
+  } else if (matchesShortcut(shortcut, shortcuts.editItem)) {
     event.preventDefault();
     store.setMode("edit");
   }
@@ -233,19 +253,22 @@ function switchTab(offset: number) {
 
 function deleteOnDoubleD(lastDAt: MutableRefObject<number>) {
   const now = Date.now();
-  const store = useNotesStore.getState();
 
   if (now - lastDAt.current > 500) {
     lastDAt.current = now;
     return;
   }
 
+  deleteFocusedItem();
+  lastDAt.current = 0;
+}
+
+function deleteFocusedItem() {
+  const store = useNotesStore.getState();
   const tab = store.tabs.find((entry) => entry.id === store.activeTabId);
   const item = tab?.items[store.cursorIndex];
 
   if (tab && item) {
     store.deleteItem(tab.id, item.id);
   }
-
-  lastDAt.current = 0;
 }

@@ -113,7 +113,7 @@ export function SettingsPanel({ onClose, open }: SettingsPanelProps) {
             setFocusIndex(0);
           }}
         >
-          Shortcuts
+          Navigation
         </button>
         <button
           type="button"

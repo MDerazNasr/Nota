@@ -64,6 +64,7 @@ export async function loadSettings(): Promise<Settings> {
     const store = await openStore(SETTINGS_FILE, { [SETTINGS_KEY]: fallback });
     const stored = await store.get<Settings>(SETTINGS_KEY);
     const windowPosition = await store.get<Settings["windowPosition"]>("windowPosition");
+    const windowSize = await store.get<Settings["windowSize"]>("windowSize");
     const normalized = normalizeSettings(stored);
 
     if (!normalized) {
@@ -73,6 +74,7 @@ export async function loadSettings(): Promise<Settings> {
     return {
       ...normalized,
       windowPosition,
+      windowSize,
     };
   } catch (error) {
     console.error("Failed to load settings store", error);

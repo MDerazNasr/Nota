@@ -83,11 +83,12 @@ describe("persist", () => {
     expect(settings.theme).toBe("dark-zinc");
     expect(settings.font).toBe("JetBrains Mono");
     expect(settings.shortcuts.toggleWindow).toBe("CommandOrControl+Shift+N");
+    expect(settings.shortcuts.openSettings).toBe("CommandOrControl+,");
     expect((data.settings as Settings).fontSize).toBe(13);
     expect(consoleError).toHaveBeenCalled();
   });
 
-  it("merges window position from the settings store root", async () => {
+  it("merges window geometry from the settings store root", async () => {
     setStoreLoaderForTests(
       (async () =>
         new MemoryStore({
@@ -108,11 +109,14 @@ describe("persist", () => {
             },
           },
           windowPosition: { x: 80, y: 120 },
+          windowSize: { width: 380, height: 500 },
         })) as never,
     );
 
     const settings = await loadSettings();
 
     expect(settings.windowPosition).toEqual({ x: 80, y: 120 });
+    expect(settings.windowSize).toEqual({ width: 380, height: 500 });
+    expect(settings.shortcuts.openItemLink).toBe("CommandOrControl+X");
   });
 });

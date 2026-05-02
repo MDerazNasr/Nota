@@ -17,6 +17,15 @@ export const DEFAULT_SHORTCUTS = {
   openSettings: "CommandOrControl+,",
   checkItem: "CommandOrControl+Enter",
   renameTab: "CommandOrControl+Shift+R",
+  moveTabLeft: "Shift+<",
+  moveTabRight: "Shift+>",
+  createItemBelow: "O",
+  createItemAbove: "Shift+O",
+  editItem: "Enter",
+  deleteItem: "Delete",
+  enterMoveMode: "Space",
+  undo: "U",
+  openItemLink: "CommandOrControl+X",
 };
 
 export const DEFAULT_SETTINGS: Settings = {
