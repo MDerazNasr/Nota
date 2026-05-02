@@ -6,14 +6,11 @@ import { Item } from "./Item";
 export function ItemList() {
   const tabs = useNotesStore((state) => state.tabs);
   const activeTabId = useNotesStore((state) => state.activeTabId);
-  const archive = useNotesStore((state) => state.archive);
   const cursorIndex = useNotesStore((state) => state.cursorIndex);
   const itemDropTarget = useNotesStore((state) => state.itemDropTarget);
   const selectedItemIds = useNotesStore((state) => state.selectedItemIds);
-  const setArchiveOpen = useNotesStore((state) => state.setArchiveOpen);
   const itemLimit = useSettingsStore((state) => state.itemLimit);
   const activeTab = useMemo(() => tabs.find((tab) => tab.id === activeTabId), [activeTabId, tabs]);
-  const archivedCount = archive.filter((item) => item.sourceTabId === activeTabId).length;
 
   return (
     <section className="item-list" aria-label="Items">
@@ -33,12 +30,6 @@ export function ItemList() {
         ))
       )}
       {activeTab && activeTab.items.length === itemLimit ? <p className="limit-row">limit reached</p> : null}
-      {archivedCount > 0 ? (
-        <button className="archive-toggle" type="button" onClick={() => setArchiveOpen(true)}>
-          Archive
-          <span>{archivedCount}</span>
-        </button>
-      ) : null}
     </section>
   );
 }

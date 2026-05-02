@@ -7,11 +7,8 @@ import { commit } from "./notesCommit";
 import {
   completeItemState,
   createItemModel,
-  createRestoredTab,
   insertAt,
   removeItemState,
-  restoreArchivedItem,
-  restoreToExistingTab,
 } from "./notesItems";
 import {
   buildMoveSelectionState,
@@ -27,7 +24,6 @@ import { useSettingsStore } from "./settings";
 type NotesStore = AppState & {
   cursorIndex: number;
   mode: AppMode;
-  archiveOpen: boolean;
   editingTabId: string | null;
   selectedItemIds: string[];
   draggingItemIds: string[];
@@ -65,13 +61,10 @@ type NotesStore = AppState & {
   finishItemDragAtItem: (target: ItemDropTarget | null) => void;
   cancelItemDrag: () => void;
   checkItem: (tabId: string, itemId: string) => void;
-  restoreItem: (archivedId: string, destination: "original" | "current" | string) => void;
-  deleteArchivedItem: (archivedId: string) => void;
-  clearArchive: () => void;
+  deleteSelectedItems: () => void;
   setCursorIndex: (index: number) => void;
   moveCursor: (direction: "up" | "down") => void;
   setMode: (mode: AppMode) => void;
-  setArchiveOpen: (open: boolean) => void;
   undoLastChange: () => void;
 };
 
@@ -81,7 +74,6 @@ export const useNotesStore = create<NotesStore>((set, get) => ({
   ...initialState,
   cursorIndex: -1,
   mode: "nav",
-  archiveOpen: false,
   editingTabId: null,
   selectedItemIds: [],
   draggingItemIds: [],
@@ -117,14 +109,10 @@ export const useNotesStore = create<NotesStore>((set, get) => ({
       const tabs = remainingTabs.length > 0 ? remainingTabs : [createDefaultTab()];
       const nextIndex = Math.max(0, deletedIndex - 1);
       const activeTabId = state.activeTabId === id ? tabs[Math.min(nextIndex, tabs.length - 1)].id : state.activeTabId;
-      const archive = state.archive.map((item) =>
-        item.sourceTabId === id ? { ...item, sourceTabExists: false } : item,
-      );
 
       return {
         tabs,
         activeTabId,
-        archive,
         cursorIndex: cursorForTab(tabs.find((tab) => tab.id === activeTabId)),
         selectedItemIds: [],
       };
@@ -351,51 +339,27 @@ export const useNotesStore = create<NotesStore>((set, get) => ({
   },
   cancelItemDrag: () => set({ draggingItemIds: [], dropTargetTabId: null, itemDropTarget: null }),
   checkItem: (tabId, itemId) => {
-    commit(set, get, (state) =>
-      completeItemState(state, tabId, itemId, useSettingsStore.getState().archiveCompletedItems),
-    );
+    commit(set, get, (state) => completeItemState(state, tabId, itemId));
   },
-  restoreItem: (archivedId, destination) => {
+  deleteSelectedItems: () => {
     commit(set, get, (state) => {
-      const archived = state.archive.find((item) => item.id === archivedId);
+      const selected = new Set(state.selectedItemIds);
 
-      if (!archived) {
+      if (selected.size === 0) {
         return {};
       }
 
-      const restored = restoreArchivedItem(archived);
-      const archive = state.archive.filter((item) => item.id !== archivedId);
-
-      if (destination === "original" && archived.sourceTabExists) {
-        return restoreToExistingTab(state, archived.sourceTabId, restored, archive);
-      }
-
-      if (destination === "original") {
-        return {};
-      }
-
-      if (destination === "current") {
-        return restoreToExistingTab(state, state.activeTabId, restored, archive);
-      }
-
-      const tab = createRestoredTab(destination || archived.sourceTabTitle, restored);
+      const tabs = state.tabs.map((tab) => ({ ...tab, items: tab.items.filter((item) => !selected.has(item.id)) }));
+      const tab = tabs.find((entry) => entry.id === state.activeTabId);
 
       return {
-        tabs: [...state.tabs, tab],
-        activeTabId: tab.id,
-        archive,
-        archiveOpen: false,
-        cursorIndex: 0,
+        tabs,
+        cursorIndex: clampCursor(state.cursorIndex, tab),
+        mode: "nav" as const,
+        selectedItemIds: [],
+        selectionAnchorId: null,
       };
     });
-  },
-  deleteArchivedItem: (archivedId) => {
-    commit(set, get, (state) => ({
-      archive: state.archive.filter((item) => item.id !== archivedId),
-    }));
-  },
-  clearArchive: () => {
-    commit(set, get, () => ({ archive: [] }));
   },
   setCursorIndex: (index) => {
     set((state) => ({ cursorIndex: clampCursor(index, activeTab(state)) }));
@@ -415,7 +379,6 @@ export const useNotesStore = create<NotesStore>((set, get) => ({
     });
   },
   setMode: (mode) => set({ mode }),
-  setArchiveOpen: (archiveOpen) => set({ archiveOpen }),
   undoLastChange: () => {
     const previous = get().undoStack.at(-1);
 

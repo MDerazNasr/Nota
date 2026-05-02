@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { AppState, Settings } from "../lib/types";
+import type { Settings } from "../lib/types";
 import { loadNotes, loadSettings, resetStoreLoaderForTests, setStoreLoaderForTests } from "./persist";
 
 type StoreData = Record<string, unknown>;
@@ -37,11 +37,10 @@ describe("persist", () => {
     expect(notes.tabs).toHaveLength(1);
     expect(notes.tabs[0].title).toBe("Untitled");
     expect(notes.activeTabId).toBe(notes.tabs[0].id);
-    expect(notes.archive).toEqual([]);
   });
 
-  it("recomputes archived item sourceTabExists on load", async () => {
-    const stored: AppState = {
+  it("loads notes and ignores legacy archive data", async () => {
+    const stored = {
       tabs: [{ id: "tab-1", title: "Work", items: [], createdAt: 1 }],
       activeTabId: "tab-1",
       archive: [
@@ -68,8 +67,7 @@ describe("persist", () => {
 
     const notes = await loadNotes();
 
-    expect(notes.archive[0].sourceTabExists).toBe(true);
-    expect(notes.archive[1].sourceTabExists).toBe(false);
+    expect(notes).toEqual({ tabs: stored.tabs, activeTabId: "tab-1" });
   });
 
   it("falls back to default settings when stored settings are corrupt", async () => {
@@ -100,10 +98,8 @@ describe("persist", () => {
             itemLimit: 15,
             openOnStartup: false,
             showInDock: true,
-            archiveCompletedItems: true,
             shortcuts: {
               toggleWindow: "CommandOrControl+Shift+N",
-              toggleArchive: "CommandOrControl+0",
               newTab: "CommandOrControl+T",
               openSettings: "CommandOrControl+,",
               checkItem: "CommandOrControl+Enter",
@@ -134,10 +130,8 @@ describe("persist", () => {
             itemLimit: 15,
             openOnStartup: false,
             showInDock: true,
-            archiveCompletedItems: true,
             shortcuts: {
               toggleWindow: "Alt+Shift+KeyN",
-              toggleArchive: "CommandOrControl+0",
               newTab: "CommandOrControl+T",
               openSettings: "CommandOrControl+,",
               checkItem: "CommandOrControl+Enter",

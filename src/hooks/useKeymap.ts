@@ -52,7 +52,7 @@ export function useKeymap({ settingsOpen, setSettingsOpen }: KeymapOptions) {
         return;
       }
 
-      if (settingsOpen || store.archiveOpen) {
+      if (settingsOpen) {
         return;
       }
 
@@ -81,18 +81,9 @@ function handleOverlayShortcut(
   const store = useNotesStore.getState();
   const shortcuts = useSettingsStore.getState().shortcuts;
 
-  if (matchesShortcut(shortcut, shortcuts.toggleArchive)) {
-    event.preventDefault();
-    setSettingsOpen(false);
-    store.setMode("nav");
-    store.setArchiveOpen(!store.archiveOpen);
-    return true;
-  }
-
   if (matchesShortcut(shortcut, shortcuts.openSettings)) {
     event.preventDefault();
     store.setMode("nav");
-    store.setArchiveOpen(false);
     setSettingsOpen(!settingsOpen);
     return true;
   }
@@ -224,6 +215,9 @@ function handleMoveKey(event: KeyboardEvent) {
   } else if (key === "u") {
     event.preventDefault();
     store.undoLastChange();
+  } else if (key === "d") {
+    event.preventDefault();
+    store.deleteSelectedItems();
   } else {
     handleMoveNavigationKey(event, store);
   }

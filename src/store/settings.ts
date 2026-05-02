@@ -17,7 +17,6 @@ type SettingsStore = Settings & {
   setOpenOnStartup: (openOnStartup: boolean) => void;
   setShowInDock: (showInDock: boolean) => void;
   setShowInMenuBar: (showInMenuBar: boolean) => void;
-  setArchiveCompletedItems: (archiveCompletedItems: boolean) => void;
   updateShortcut: (key: keyof ShortcutMap, value: string) => void;
   resetSetting: (key: SettingsKey) => void;
 };
@@ -68,10 +67,6 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
     set({ showInMenuBar });
     queueSave(get());
   },
-  setArchiveCompletedItems: (archiveCompletedItems) => {
-    set({ archiveCompletedItems });
-    queueSave(get());
-  },
   updateShortcut: (key, value) => {
     set((state) => ({
       shortcuts: {
@@ -109,7 +104,6 @@ function toSettings(state: Settings): Settings {
     openOnStartup: state.openOnStartup,
     showInDock: state.showInDock,
     showInMenuBar: state.showInMenuBar,
-    archiveCompletedItems: state.archiveCompletedItems,
     shortcuts: state.shortcuts,
     windowPosition: state.windowPosition,
     windowSize: state.windowSize,

@@ -71,10 +71,10 @@ export function SettingsPanel({ onClose, open }: SettingsPanelProps) {
         adjustSettingsRow(rows[focusIndex], 1);
       } else if (event.key === "ArrowDown" && rows[focusIndex]?.dataset.settingsRow === "theme") {
         event.preventDefault();
-        adjustSettingsRow(rows[focusIndex], 1);
+        moveThemeSwatch(rows[focusIndex], "down");
       } else if (event.key === "ArrowUp" && rows[focusIndex]?.dataset.settingsRow === "theme") {
         event.preventDefault();
-        adjustSettingsRow(rows[focusIndex], -1);
+        moveThemeSwatch(rows[focusIndex], "up");
       } else if (event.key === "Escape") {
         event.preventDefault();
         onClose();
@@ -206,6 +206,19 @@ function adjustSettingsRow(row: HTMLElement | undefined, offset: -1 | 1) {
 function clickTheme(row: HTMLElement, offset: -1 | 1) {
   const swatches = Array.from(row.querySelectorAll<HTMLButtonElement>(".theme-swatch"));
   const activeIndex = swatches.findIndex((swatch) => swatch.classList.contains("active"));
+  const next = swatches[(activeIndex + offset + swatches.length) % swatches.length];
+  next?.click();
+}
+
+function moveThemeSwatch(row: HTMLElement | undefined, direction: "up" | "down") {
+  if (!row) {
+    return;
+  }
+
+  const swatches = Array.from(row.querySelectorAll<HTMLButtonElement>(".theme-swatch"));
+  const activeIndex = swatches.findIndex((swatch) => swatch.classList.contains("active"));
+  const columns = 5;
+  const offset = direction === "down" ? columns : -columns;
   const next = swatches[(activeIndex + offset + swatches.length) % swatches.length];
   next?.click();
 }

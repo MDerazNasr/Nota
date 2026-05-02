@@ -14,7 +14,7 @@ nota is a small floating task app built for developers who prefer keyboard workf
 - Slash commands for links and reusable color-coded tags
 - Keyboard-accessible tag navigation and deletion
 - Multi-select task movement and reorder mode
-- Optional archive behavior for completed tasks
+- Completed tasks are crossed out and kept in the list until deleted
 - Configurable themes, fonts, item limits, radius, and shortcuts
 - Local-first persistence using Tauri store files
 
@@ -75,7 +75,6 @@ The full Tauri bundle target may require extra local signing or packaging setup.
 | --- | --- |
 | Toggle window | `Opt + Shift + N` |
 | Open settings | `Cmd + ,` |
-| Toggle archive | `Cmd + 0` |
 | New tab | `Cmd + T` |
 | Rename tab | `Cmd + Shift + R` |
 

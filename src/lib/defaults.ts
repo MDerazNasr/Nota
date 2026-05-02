@@ -12,7 +12,6 @@ export const EMPTY_DOC = {
 
 export const DEFAULT_SHORTCUTS = {
   toggleWindow: "Alt+Shift+KeyN",
-  toggleArchive: "CommandOrControl+0",
   newTab: "CommandOrControl+T",
   openSettings: "CommandOrControl+,",
   checkItem: "CommandOrControl+Enter",
@@ -37,7 +36,6 @@ export const DEFAULT_SETTINGS: Settings = {
   openOnStartup: false,
   showInDock: true,
   showInMenuBar: false,
-  archiveCompletedItems: true,
   shortcuts: DEFAULT_SHORTCUTS,
 };
 
@@ -56,7 +54,6 @@ export function createDefaultAppState(): AppState {
   return {
     tabs: [tab],
     activeTabId: tab.id,
-    archive: [],
   };
 }
 

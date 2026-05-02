@@ -2,7 +2,7 @@ import { load } from "@tauri-apps/plugin-store";
 import { createDefaultAppState, createDefaultSettings } from "../lib/defaults";
 import { isFontOption } from "../lib/fonts";
 import { normalizeTagName } from "../lib/tags";
-import type { AppState, ArchivedItem, Item, ItemTag, Settings, Tab } from "../lib/types";
+import type { AppState, Item, ItemTag, Settings, Tab } from "../lib/types";
 
 type StoreLike = {
   get<T>(key: string): Promise<T | undefined>;
@@ -55,7 +55,7 @@ export async function loadNotes(): Promise<AppState> {
 }
 
 export function saveNotes(state: AppState): Promise<void> {
-  return debounceSave("notes", () => saveNotesNow(stripArchiveRuntimeFields(state)));
+  return debounceSave("notes", () => saveNotesNow(state));
 }
 
 export async function loadSettings(): Promise<Settings> {
@@ -140,13 +140,8 @@ function normalizeAppState(value: unknown): AppState | null {
   const tabs = value.tabs.length > 0 ? value.tabs.map(normalizeTab) : createDefaultAppState().tabs;
   const tabIds = new Set(tabs.map((tab) => tab.id));
   const activeTabId = tabIds.has(value.activeTabId) ? value.activeTabId : tabs[0].id;
-  const archive = value.archive.map((item) => ({
-    ...item,
-    tags: normalizeTags(item.tags),
-    sourceTabExists: tabIds.has(item.sourceTabId),
-  }));
 
-  return { tabs, activeTabId, archive };
+  return { tabs, activeTabId };
 }
 
 function normalizeTab(tab: Tab): Tab {
@@ -197,19 +192,12 @@ function normalizeSettings(value: unknown): Settings | null {
   };
 }
 
-function stripArchiveRuntimeFields(state: AppState): AppState {
-  return {
-    ...state,
-    archive: state.archive.map(({ sourceTabExists: _sourceTabExists, ...item }) => item as ArchivedItem),
-  };
-}
-
 function isAppState(value: unknown): value is AppState {
-  if (!isRecord(value) || !Array.isArray(value.tabs) || !Array.isArray(value.archive)) {
+  if (!isRecord(value) || !Array.isArray(value.tabs)) {
     return false;
   }
 
-  return typeof value.activeTabId === "string" && value.tabs.every(isTab) && value.archive.every(isArchivedItem);
+  return typeof value.activeTabId === "string" && value.tabs.every(isTab);
 }
 
 function isTab(value: unknown): value is Tab {
@@ -231,18 +219,6 @@ function isItem(value: unknown): value is Item {
     (value.state === "active" || value.state === "done") &&
     (value.tags === undefined || (Array.isArray(value.tags) && value.tags.every(isItemTag))) &&
     typeof value.createdAt === "number"
-  );
-}
-
-function isArchivedItem(value: unknown): value is ArchivedItem {
-  return (
-    isRecord(value) &&
-    typeof value.id === "string" &&
-    isRecord(value.content) &&
-    (value.tags === undefined || (Array.isArray(value.tags) && value.tags.every(isItemTag))) &&
-    typeof value.archivedAt === "number" &&
-    typeof value.sourceTabId === "string" &&
-    typeof value.sourceTabTitle === "string"
   );
 }
 
