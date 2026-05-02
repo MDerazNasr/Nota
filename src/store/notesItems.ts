@@ -1,6 +1,6 @@
 import { nanoid } from "nanoid";
-import { createDefaultTab, EMPTY_DOC } from "../lib/defaults";
-import type { AppState, ArchivedItem, Item, Tab } from "../lib/types";
+import { EMPTY_DOC } from "../lib/defaults";
+import type { AppState, Item } from "../lib/types";
 import { clampCursor } from "./notesSelectors";
 
 type ItemMutationState = AppState & {
@@ -53,37 +53,8 @@ export function completeItemState(
   state: ItemMutationState,
   tabId: string,
   itemId: string,
-  archiveCompletedItems: boolean,
 ): Partial<ItemMutationState> {
-  if (archiveCompletedItems) {
-    return archiveItemState(state, tabId, itemId);
-  }
-
   return toggleDoneItemState(state, tabId, itemId);
-}
-
-function archiveItemState(state: ItemMutationState, tabId: string, itemId: string): Partial<ItemMutationState> {
-  const tab = state.tabs.find((entry) => entry.id === tabId);
-  const item = tab?.items.find((entry) => entry.id === itemId);
-
-  if (!tab || !item) {
-    return {};
-  }
-
-  const archived: ArchivedItem = {
-    id: item.id,
-    content: item.content,
-    tags: item.tags,
-    archivedAt: Date.now(),
-    sourceTabId: tab.id,
-    sourceTabTitle: tab.title,
-    sourceTabExists: true,
-  };
-
-  return {
-    ...removeItemState(state, tabId, itemId),
-    archive: [...state.archive, archived],
-  };
 }
 
 function toggleDoneItemState(state: ItemMutationState, tabId: string, itemId: string): Partial<ItemMutationState> {
@@ -106,28 +77,4 @@ function toggleDoneItemState(state: ItemMutationState, tabId: string, itemId: st
     tabs,
     cursorIndex: items.findIndex((entry) => entry.id === itemId),
   };
-}
-
-export function restoreArchivedItem(archived: ArchivedItem): Item {
-  return {
-    id: archived.id,
-    content: archived.content,
-    state: "active",
-    tags: archived.tags ?? [],
-    createdAt: Date.now(),
-  };
-}
-
-export function restoreToExistingTab(state: AppState, tabId: string, item: Item, archive: ArchivedItem[]) {
-  return {
-    tabs: state.tabs.map((tab) => (tab.id === tabId ? { ...tab, items: [item, ...tab.items] } : tab)),
-    activeTabId: tabId,
-    archive,
-    archiveOpen: false,
-    cursorIndex: 0,
-  };
-}
-
-export function createRestoredTab(title: string, item: Item): Tab {
-  return { ...createDefaultTab(title), items: [item] };
 }

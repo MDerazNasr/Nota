@@ -25,25 +25,13 @@ export type Tab = {
   createdAt: number;
 };
 
-export type ArchivedItem = {
-  id: string;
-  content: JSONContent;
-  tags?: ItemTag[];
-  archivedAt: number;
-  sourceTabId: string;
-  sourceTabTitle: string;
-  sourceTabExists: boolean;
-};
-
 export type AppState = {
   tabs: Tab[];
   activeTabId: string;
-  archive: ArchivedItem[];
 };
 
 export type ShortcutMap = {
   toggleWindow: string;
-  toggleArchive: string;
   newTab: string;
   openSettings: string;
   checkItem: string;
@@ -78,7 +66,6 @@ export type Settings = {
   openOnStartup: boolean;
   showInDock: boolean;
   showInMenuBar: boolean;
-  archiveCompletedItems: boolean;
   shortcuts: ShortcutMap;
   windowPosition?: WindowPosition;
   windowSize?: WindowSize;

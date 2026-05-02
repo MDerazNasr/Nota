@@ -20,7 +20,7 @@ describe("notes store", () => {
     vi.useFakeTimers();
     setStoreLoaderForTests((async () => new MemoryStore()) as never);
     resetNotesState(createDefaultAppState());
-    useSettingsStore.setState({ itemLimit: 15, archiveCompletedItems: true });
+    useSettingsStore.setState({ itemLimit: 15 });
   });
 
   afterEach(() => {
@@ -67,30 +67,7 @@ describe("notes store", () => {
     expect(useNotesStore.getState().cursorIndex).toBe(1);
   });
 
-  it("moves checked items to the archive and restores them to the source tab", () => {
-    useNotesStore.getState().createItem("below");
-    const tabBeforeCheck = activeTab();
-    const itemId = tabBeforeCheck.items[0].id;
-
-    useNotesStore.getState().checkItem(tabBeforeCheck.id, itemId);
-
-    const checkedState = useNotesStore.getState();
-
-    expect(activeTab().items).toEqual([]);
-    expect(checkedState.archive).toHaveLength(1);
-    expect(checkedState.archive[0].sourceTabExists).toBe(true);
-
-    useNotesStore.getState().restoreItem(itemId, "original");
-
-    const restoredState = useNotesStore.getState();
-
-    expect(activeTab().items[0].id).toBe(itemId);
-    expect(restoredState.archive).toEqual([]);
-    expect(restoredState.cursorIndex).toBe(0);
-  });
-
-  it("crosses completed items out and moves them to the bottom when archive is inactive", () => {
-    useSettingsStore.setState({ archiveCompletedItems: false });
+  it("crosses completed items out and moves them to the bottom", () => {
     useNotesStore.getState().createItem("below");
     useNotesStore.getState().setMode("nav");
     useNotesStore.getState().createItem("below");
@@ -104,7 +81,6 @@ describe("notes store", () => {
 
     expect(next.items.map((item) => item.id)).toEqual([ids[1], ids[0]]);
     expect(next.items[1].state).toBe("done");
-    expect(useNotesStore.getState().archive).toEqual([]);
     expect(useNotesStore.getState().cursorIndex).toBe(1);
   });
 
@@ -146,21 +122,6 @@ describe("notes store", () => {
     useNotesStore.getState().removeItemTag(tab.id, secondId, "work");
 
     expect(activeTab().items.map((item) => item.tags.map((tag) => tag.name))).toEqual([["urgent"], []]);
-  });
-
-  it("marks archive entries orphaned when their tab is deleted", () => {
-    useNotesStore.getState().createItem("below");
-    const tab = activeTab();
-    const itemId = tab.items[0].id;
-
-    useNotesStore.getState().checkItem(tab.id, itemId);
-    useNotesStore.getState().deleteTab(tab.id);
-
-    const state = useNotesStore.getState();
-
-    expect(state.tabs).toHaveLength(1);
-    expect(state.tabs[0].title).toBe("Untitled");
-    expect(state.archive[0].sourceTabExists).toBe(false);
   });
 
   it("moves selected items to another tab", () => {
@@ -300,58 +261,23 @@ describe("notes store", () => {
     expect(useNotesStore.getState().selectedItemIds).toEqual([ids[0], ids[1], ids[2]]);
   });
 
-  it("restores orphaned archived items to the current tab", () => {
-    useNotesStore.getState().createItem("below");
-    const sourceTab = activeTab();
-    const itemId = sourceTab.items[0].id;
-
-    useNotesStore.getState().checkItem(sourceTab.id, itemId);
-    useNotesStore.getState().deleteTab(sourceTab.id);
-    const currentTabId = useNotesStore.getState().activeTabId;
-
-    useNotesStore.getState().restoreItem(itemId, "current");
-
-    const state = useNotesStore.getState();
-
-    expect(state.activeTabId).toBe(currentTabId);
-    expect(activeTab().items[0].id).toBe(itemId);
-    expect(state.archive).toEqual([]);
-  });
-
-  it("restores orphaned archived items to a new tab name", () => {
-    useNotesStore.getState().createItem("below");
-    const sourceTab = activeTab();
-    const itemId = sourceTab.items[0].id;
-
-    useNotesStore.getState().checkItem(sourceTab.id, itemId);
-    useNotesStore.getState().deleteTab(sourceTab.id);
-    useNotesStore.getState().restoreItem(itemId, "Recovered");
-
-    const state = useNotesStore.getState();
-    const restoredTab = state.tabs.find((tab) => tab.title === "Recovered");
-
-    expect(restoredTab?.items[0].id).toBe(itemId);
-    expect(state.activeTabId).toBe(restoredTab?.id);
-    expect(state.archive).toEqual([]);
-  });
-
-  it("deletes archived items and clears the archive", () => {
+  it("deletes selected items from move mode", () => {
     useNotesStore.getState().createItem("below");
     useNotesStore.getState().setMode("nav");
     useNotesStore.getState().createItem("below");
+    useNotesStore.getState().setMode("nav");
+    useNotesStore.getState().createItem("below");
+
     const tab = activeTab();
     const ids = tab.items.map((item) => item.id);
 
-    useNotesStore.getState().checkItem(tab.id, ids[0]);
-    useNotesStore.getState().checkItem(tab.id, ids[1]);
+    useNotesStore.getState().setSelectedItemIds([ids[0], ids[2]]);
+    useNotesStore.getState().setMode("move");
+    useNotesStore.getState().deleteSelectedItems();
 
-    useNotesStore.getState().deleteArchivedItem(ids[0]);
-
-    expect(useNotesStore.getState().archive.map((item) => item.id)).toEqual([ids[1]]);
-
-    useNotesStore.getState().clearArchive();
-
-    expect(useNotesStore.getState().archive).toEqual([]);
+    expect(activeTab().items.map((item) => item.id)).toEqual([ids[1]]);
+    expect(useNotesStore.getState().mode).toBe("nav");
+    expect(useNotesStore.getState().selectedItemIds).toEqual([]);
   });
 });
 
@@ -360,7 +286,6 @@ function resetNotesState(state: AppState) {
     ...state,
     cursorIndex: -1,
     mode: "nav",
-    archiveOpen: false,
     editingTabId: null,
     selectedItemIds: [],
     draggingItemIds: [],

@@ -23,7 +23,6 @@ export function toAppState(state: AppState): AppState {
   return {
     tabs: state.tabs,
     activeTabId: state.activeTabId,
-    archive: state.archive,
   };
 }
 
