@@ -114,15 +114,35 @@ export function applySlashItem(
 }
 
 export function insertLink(editor: Editor | null, label: string, url: string) {
-  editor
-    ?.chain()
+  if (!editor) {
+    return;
+  }
+
+  const inserted = editor
+    .chain()
     .focus()
     .insertContent({
       type: "text",
       text: label,
       marks: [{ type: "link", attrs: { href: normalizeHref(url) } }],
     })
+    .unsetMark("link")
     .run();
+
+  if (inserted) {
+    const cursorPosition = editor.state.selection.to;
+    editor.commands.setTextSelection(cursorPosition);
+    editor.commands.unsetMark("link");
+  }
+}
+
+export function appendAfterTask(editor: Editor | null) {
+  if (!editor) {
+    return;
+  }
+
+  const end = editor.state.selection.$from.end();
+  editor.chain().focus().setTextSelection(end).unsetMark("link").run();
 }
 
 export function dismissSlashMenu(editor: Editor | null, range: SlashState["range"], setSlashState: (state: SlashState | null) => void) {
