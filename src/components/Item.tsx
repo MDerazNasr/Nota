@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Editor } from "@tiptap/core";
 import { invoke } from "@tauri-apps/api/core";
 import { EditorContent, useEditor } from "@tiptap/react";
@@ -25,6 +25,12 @@ type LinkPopupState = {
   position: { left: number; top: number };
 };
 
+type CursorRect = {
+  height: number;
+  left: number;
+  top: number;
+};
+
 type ItemProps = {
   item: ItemModel;
   dropPosition: "before" | "after" | null;
@@ -40,6 +46,7 @@ type PointerDragTarget =
   | null;
 
 export function Item({ dropPosition, focused, index, item, selected, tabId }: ItemProps) {
+  const rowRef = useRef<HTMLElement>(null);
   const mode = useNotesStore((state) => state.mode);
   const setCursorIndex = useNotesStore((state) => state.setCursorIndex);
   const setMode = useNotesStore((state) => state.setMode);
@@ -55,6 +62,7 @@ export function Item({ dropPosition, focused, index, item, selected, tabId }: It
   const toggleItemSelection = useNotesStore((state) => state.toggleItemSelection);
   const updateItemContent = useNotesStore((state) => state.updateItemContent);
   const [editorMode, setEditorMode] = useState<ItemEditorMode>("insert");
+  const [cursorRect, setCursorRect] = useState<CursorRect | null>(null);
   const [slashState, setSlashState] = useState<SlashState | null>(null);
   const [linkPopup, setLinkPopup] = useState<LinkPopupState | null>(null);
   const slashItems = useMemo(() => filterSlashCommands(slashState?.query ?? ""), [slashState?.query]);
@@ -89,7 +97,7 @@ export function Item({ dropPosition, focused, index, item, selected, tabId }: It
 
         if (slashState) {
           const handled = handleSlashKey(event, slashState, slashItems, setSlashState, (command) => {
-            applySlashCommand(editor, slashState, command, setLinkPopup);
+            applySlashCommand(editor, slashState, command, setLinkPopup, setSlashState);
           }, () => dismissSlashMenu(editor, slashState.range, setSlashState));
 
           if (handled) {
@@ -167,9 +175,51 @@ export function Item({ dropPosition, focused, index, item, selected, tabId }: It
     }
   }, [editable, editor]);
 
+  useEffect(() => {
+    if (!editor || !editable || editorMode === "insert") {
+      setCursorRect(null);
+      return;
+    }
+
+    const updateCursor = () => {
+      const row = rowRef.current;
+
+      if (!row) {
+        setCursorRect(null);
+        return;
+      }
+
+      try {
+        const coords = editor.view.coordsAtPos(editor.state.selection.to);
+        const rowRect = row.getBoundingClientRect();
+
+        setCursorRect({
+          height: Math.max(16, coords.bottom - coords.top),
+          left: coords.left - rowRect.left,
+          top: coords.top - rowRect.top,
+        });
+      } catch {
+        setCursorRect(null);
+      }
+    };
+
+    updateCursor();
+    editor.on("selectionUpdate", updateCursor);
+    editor.on("transaction", updateCursor);
+    window.addEventListener("resize", updateCursor);
+
+    return () => {
+      editor.off("selectionUpdate", updateCursor);
+      editor.off("transaction", updateCursor);
+      window.removeEventListener("resize", updateCursor);
+    };
+  }, [editable, editor, editorMode]);
+
   return (
     <article
+      ref={rowRef}
       className={rowClassName(focused, selected, dropPosition)}
+      data-editor-mode={editable ? editorMode : undefined}
       data-item-id={item.id}
       data-state={item.state}
       data-tab-id={tabId}
@@ -249,13 +299,19 @@ export function Item({ dropPosition, focused, index, item, selected, tabId }: It
         }}
       />
       <EditorContent editor={editor} />
+      {cursorRect ? (
+        <span
+          className={editorMode === "visual" ? "vim-block-cursor visual" : "vim-block-cursor"}
+          style={{ height: cursorRect.height, left: cursorRect.left, top: cursorRect.top }}
+        />
+      ) : null}
       {slashState && slashItems.length > 0 ? (
         <SlashMenu
           items={slashItems}
           position={slashState.position}
           selectedIndex={Math.min(slashState.selectedIndex, slashItems.length - 1)}
           onDismiss={() => dismissSlashMenu(editor, slashState.range, setSlashState)}
-          onSelect={(command) => applySlashCommand(editor, slashState, command, setLinkPopup)}
+          onSelect={(command) => applySlashCommand(editor, slashState, command, setLinkPopup, setSlashState)}
         />
       ) : null}
       {linkPopup ? (
@@ -376,6 +432,7 @@ function applySlashCommand(
   slashState: SlashState,
   command: SlashCommand,
   setLinkPopup: (state: LinkPopupState | null) => void,
+  setSlashState: (state: SlashState | null) => void,
 ) {
   if (!editor) {
     return;
@@ -386,6 +443,7 @@ function applySlashCommand(
   if (command === "link") {
     chain.run();
     setLinkPopup({ position: slashState.position });
+    setSlashState(null);
   }
 }
 

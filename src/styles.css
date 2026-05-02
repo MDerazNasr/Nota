@@ -250,6 +250,7 @@ input {
 }
 
 .item-row {
+  position: relative;
   display: grid;
   min-height: 32px;
   grid-template-columns: 16px 24px 1fr;
@@ -328,6 +329,25 @@ input {
 
 .item-row .ProseMirror-focused {
   outline: none;
+}
+
+.item-row[data-editor-mode="normal"] .ProseMirror,
+.item-row[data-editor-mode="visual"] .ProseMirror {
+  caret-color: transparent;
+}
+
+.vim-block-cursor {
+  position: absolute;
+  z-index: 2;
+  width: 8px;
+  border-radius: 2px;
+  background: var(--accent);
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.vim-block-cursor.visual {
+  width: 3px;
 }
 
 .limit-row {
