@@ -9,6 +9,7 @@ import {
   createItemModel,
   insertAt,
   removeItemState,
+  restoreItemsByOrderState,
   sortItemsByTagState,
 } from "./notesItems";
 import {
@@ -31,6 +32,7 @@ type NotesStore = AppState & {
   dropTargetTabId: string | null;
   itemDropTarget: ItemDropTarget | null;
   selectionAnchorId: string | null;
+  tagSortOriginalItemIds: Record<string, string[]>;
   undoStack: AppState[];
   hydrated: boolean;
   hydrateNotes: () => Promise<void>;
@@ -82,6 +84,7 @@ export const useNotesStore = create<NotesStore>((set, get) => ({
   dropTargetTabId: null,
   itemDropTarget: null,
   selectionAnchorId: null,
+  tagSortOriginalItemIds: {},
   undoStack: [],
   hydrated: false,
   hydrateNotes: async () => {
@@ -117,6 +120,7 @@ export const useNotesStore = create<NotesStore>((set, get) => ({
         activeTabId,
         cursorIndex: cursorForTab(tabs.find((tab) => tab.id === activeTabId)),
         selectedItemIds: [],
+        tagSortOriginalItemIds: removeRecordKey(state.tagSortOriginalItemIds, id),
       };
     });
   },
@@ -344,7 +348,34 @@ export const useNotesStore = create<NotesStore>((set, get) => ({
     commit(set, get, (state) => completeItemState(state, tabId, itemId));
   },
   sortActiveTabByTag: () => {
-    commit(set, get, (state) => sortItemsByTagState(state, state.activeTabId));
+    commit(set, get, (state) => {
+      const tab = activeTab(state);
+
+      if (!tab) {
+        return {};
+      }
+
+      const originalItemIds = state.tagSortOriginalItemIds[tab.id];
+
+      if (originalItemIds) {
+        return {
+          ...restoreItemsByOrderState(state, tab.id, originalItemIds),
+          tagSortOriginalItemIds: removeRecordKey(state.tagSortOriginalItemIds, tab.id),
+        };
+      }
+
+      if (tab.items.length < 2 || !tab.items.some((item) => item.tags.length > 0)) {
+        return {};
+      }
+
+      return {
+        ...sortItemsByTagState(state, tab.id),
+        tagSortOriginalItemIds: {
+          ...state.tagSortOriginalItemIds,
+          [tab.id]: tab.items.map((item) => item.id),
+        },
+      };
+    });
   },
   deleteSelectedItems: () => {
     commit(set, get, (state) => {
@@ -400,8 +431,15 @@ export const useNotesStore = create<NotesStore>((set, get) => ({
       dropTargetTabId: null,
       itemDropTarget: null,
       selectionAnchorId: null,
+      tagSortOriginalItemIds: {},
       undoStack: state.undoStack.slice(0, -1),
     }));
     void saveNotes(previous);
   },
 }));
+
+function removeRecordKey<T>(record: Record<string, T>, key: string) {
+  const next = { ...record };
+  delete next[key];
+  return next;
+}

@@ -12,8 +12,10 @@ export function TitleBar({ onOpenSettings }: TitleBarProps) {
   const tabs = useNotesStore((state) => state.tabs);
   const activeTabId = useNotesStore((state) => state.activeTabId);
   const sortActiveTabByTag = useNotesStore((state) => state.sortActiveTabByTag);
+  const tagSortOriginalItemIds = useNotesStore((state) => state.tagSortOriginalItemIds);
   const activeTab = tabs.find((tab) => tab.id === activeTabId);
-  const canSortByTag = Boolean(activeTab?.items.some((item) => item.tags.length > 0));
+  const tagSortActive = Boolean(tagSortOriginalItemIds[activeTabId]);
+  const canSortByTag = tagSortActive || Boolean(activeTab?.items.some((item) => item.tags.length > 0));
 
   const minimizeWindow = async () => {
     await getCurrentWindow().minimize().catch(console.error);
@@ -41,11 +43,12 @@ export function TitleBar({ onOpenSettings }: TitleBarProps) {
       <span className="title-bar-name">nota</span>
       <div className="title-bar-actions">
         <button
-          className="icon-button"
+          className={tagSortActive ? "icon-button active" : "icon-button"}
           type="button"
-          aria-label="Sort by tag"
+          aria-label={tagSortActive ? "Restore original order" : "Sort by tag"}
+          aria-pressed={tagSortActive}
           disabled={!canSortByTag}
-          title="Sort by rarest tag"
+          title={tagSortActive ? "Restore original order" : "Sort by rarest tag"}
           onClick={sortActiveTabByTag}
         >
           <Tags size={14} strokeWidth={1.75} />

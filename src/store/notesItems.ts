@@ -75,6 +75,31 @@ export function sortItemsByTagState(state: ItemMutationState, tabId: string): Pa
   };
 }
 
+export function restoreItemsByOrderState(
+  state: ItemMutationState,
+  tabId: string,
+  orderedItemIds: string[],
+): Partial<ItemMutationState> {
+  const tab = state.tabs.find((entry) => entry.id === tabId);
+
+  if (!tab) {
+    return {};
+  }
+
+  const focusedId = tab.items[state.cursorIndex]?.id ?? null;
+  const itemsById = new Map(tab.items.map((item) => [item.id, item]));
+  const restoredItems = orderedItemIds.map((id) => itemsById.get(id)).filter((item): item is Item => Boolean(item));
+  const restoredIds = new Set(restoredItems.map((item) => item.id));
+  const newItems = tab.items.filter((item) => !restoredIds.has(item.id));
+  const items = [...restoredItems, ...newItems];
+  const cursorIndex = focusedId ? items.findIndex((item) => item.id === focusedId) : clampCursor(state.cursorIndex, { ...tab, items });
+
+  return {
+    tabs: state.tabs.map((entry) => (entry.id === tabId ? { ...entry, items } : entry)),
+    cursorIndex,
+  };
+}
+
 function sortItemsByTag(items: Item[]) {
   const counts = tagCounts(items);
 

@@ -124,7 +124,7 @@ describe("notes store", () => {
     expect(activeTab().items.map((item) => item.tags.map((tag) => tag.name))).toEqual([["urgent"], []]);
   });
 
-  it("sorts active tab items by each item rarest tag", () => {
+  it("toggles active tab items between rarest tag sort and original order", () => {
     vi.spyOn(Math, "random").mockReturnValue(0);
 
     for (let index = 0; index < 5; index += 1) {
@@ -145,6 +145,19 @@ describe("notes store", () => {
 
     expect(activeTab().items.map((item) => item.id)).toEqual([rareMulti, rareOnly, commonOne, commonTwo, untagged]);
     expect(useNotesStore.getState().cursorIndex).toBe(1);
+    expect(useNotesStore.getState().tagSortOriginalItemIds[tab.id]).toEqual([
+      commonOne,
+      rareMulti,
+      untagged,
+      rareOnly,
+      commonTwo,
+    ]);
+
+    useNotesStore.getState().sortActiveTabByTag();
+
+    expect(activeTab().items.map((item) => item.id)).toEqual([commonOne, rareMulti, untagged, rareOnly, commonTwo]);
+    expect(useNotesStore.getState().cursorIndex).toBe(3);
+    expect(useNotesStore.getState().tagSortOriginalItemIds[tab.id]).toBeUndefined();
   });
 
   it("moves selected items to another tab", () => {
