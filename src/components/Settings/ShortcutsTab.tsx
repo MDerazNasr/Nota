@@ -61,9 +61,19 @@ const REFERENCE_SECTIONS: Array<{
   {
     label: "Slash menu",
     rows: [
-      { keyCombo: "/link", label: "Create link" },
-      { keyCombo: "/tag", label: "Create or add tag" },
+      { keyCombo: "/", label: "Open link and tag suggestions" },
+      { keyCombo: "/anything", label: "Create or select a tag" },
       { keyCombo: "Enter", label: "Use suggestion" },
+    ],
+  },
+  {
+    label: "Task links",
+    rows: [
+      { keyCombo: "/link", label: "Open link fields" },
+      { keyCombo: "Tab / N", label: "Move to URL field" },
+      { keyCombo: "Shift+Tab / Shift+N", label: "Return to label field" },
+      { keyCombo: "Enter", label: "Insert link" },
+      { keyCombo: "Cmd+X", label: "Open focused task link" },
     ],
   },
   {
@@ -109,9 +119,11 @@ const REFERENCE_SECTIONS: Array<{
     ],
   },
   {
-    label: "Tags",
+    label: "Task tags",
     rows: [
-      { keyCombo: "Right", label: "Enter tags from task end" },
+      { keyCombo: "/name", label: "Add tag to task" },
+      { keyCombo: "/", label: "Select existing tag" },
+      { keyCombo: "Right", label: "Enter tags from task" },
       { keyCombo: "Left / Right", label: "Move between tags" },
       { keyCombo: "Backspace", label: "Delete tag" },
       { keyCombo: "Left on first", label: "Return to task" },
