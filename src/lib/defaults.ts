@@ -25,6 +25,7 @@ export const DEFAULT_SHORTCUTS = {
   enterMoveMode: "Space",
   undo: "U",
   openItemLink: "CommandOrControl+X",
+  sortByTag: "CommandOrControl+.",
 };
 
 export const DEFAULT_SETTINGS: Settings = {

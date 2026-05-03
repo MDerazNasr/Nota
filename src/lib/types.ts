@@ -45,6 +45,7 @@ export type ShortcutMap = {
   enterMoveMode: string;
   undo: string;
   openItemLink: string;
+  sortByTag: string;
 };
 
 export type WindowPosition = {

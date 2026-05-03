@@ -110,6 +110,12 @@ function handleCommandKey(
     return;
   }
 
+  if (matchesShortcut(shortcut, shortcuts.sortByTag)) {
+    event.preventDefault();
+    store.sortActiveTabByTag();
+    return;
+  }
+
   if (/^[1-9]$/.test(event.key)) {
     event.preventDefault();
     const tab = store.tabs[Number(event.key) - 1];

@@ -34,6 +34,7 @@ const HOTKEY_SECTIONS: Array<{
       { key: "deleteItem", label: "Delete focused item" },
       { key: "checkItem", label: "Check item" },
       { key: "openItemLink", label: "Open item link" },
+      { key: "sortByTag", label: "Sort by tag" },
       { key: "undo", label: "Undo" },
     ],
   },
@@ -127,7 +128,7 @@ const REFERENCE_SECTIONS: Array<{
       { keyCombo: "Left / Right", label: "Move between tags" },
       { keyCombo: "Backspace", label: "Delete tag" },
       { keyCombo: "Left on first", label: "Return to task" },
-      { keyCombo: "Sort by tag", label: "Group by rarest tag" },
+      { keyCombo: "Cmd+.", label: "Group by rarest tag" },
     ],
   },
   {
