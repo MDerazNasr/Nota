@@ -1,0 +1,71 @@
+.slash-menu {
+  position: fixed;
+  z-index: 50;
+  width: 200px;
+  max-height: 180px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 24%);
+  padding: 4px;
+}
+
+.slash-menu-item {
+  display: grid;
+  width: 100%;
+  gap: 2px;
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-primary);
+  padding: 6px 8px;
+  text-align: left;
+}
+
+.slash-menu-item small {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.slash-menu-label {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+}
+
+.slash-menu-dot {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+}
+
+.slash-menu-item.active,
+.slash-menu-item:hover {
+  background: var(--accent-muted);
+}
+
+.link-popup {
+  position: fixed;
+  z-index: 60;
+  display: grid;
+  width: 220px;
+  gap: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 24%);
+  padding: 8px;
+}
+
+.link-popup input {
+  height: 28px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text-primary);
+  font-size: 12px;
+  padding: 0 8px;
+}

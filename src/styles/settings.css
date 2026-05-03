@@ -1,0 +1,253 @@
+.settings-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  padding: 12px 18px 8px;
+}
+
+.settings-tabs button {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.settings-tabs button[aria-selected="true"] {
+  border-color: var(--accent);
+  color: var(--text-primary);
+}
+
+[data-settings-row]:focus,
+[data-settings-primary]:focus {
+  border-color: var(--accent);
+}
+
+[data-settings-row]:focus {
+  border-radius: calc(var(--radius) + 4px);
+  background: var(--accent-muted);
+}
+
+.settings-section {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+  overflow-y: auto;
+  padding: 12px 18px 18px;
+  scrollbar-color: var(--text-muted) transparent;
+  scrollbar-width: thin;
+}
+
+.settings-section::-webkit-scrollbar {
+  width: 8px;
+}
+
+.settings-section::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.settings-section::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: var(--text-muted);
+}
+
+.setting-row {
+  display: grid;
+  min-height: 40px;
+  grid-template-columns: 88px 1fr 28px;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
+  padding: 4px 8px;
+}
+
+.setting-row label {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.setting-control {
+  min-width: 0;
+}
+
+.setting-control select {
+  width: 100%;
+  height: 28px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text-primary);
+  font-size: 12px;
+}
+
+.theme-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 24px);
+  gap: 8px;
+}
+
+.theme-swatch {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  grid-template-columns: repeat(3, 1fr);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0;
+}
+
+.theme-swatch.active {
+  border-color: var(--accent);
+}
+
+.slider-control {
+  display: grid;
+  grid-template-columns: 1fr 32px;
+  align-items: center;
+  gap: 8px;
+}
+
+.slider-control input {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.slider-control output {
+  color: var(--text-muted);
+  font-size: 11px;
+  text-align: right;
+}
+
+.reset-button {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.reset-button:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.setting-group-label {
+  margin-top: 10px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 650;
+  text-transform: uppercase;
+}
+
+.hotkey-section {
+  display: grid;
+  gap: 2px;
+}
+
+.hotkey-section-label {
+  margin-top: 6px;
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.toggle-row,
+.hotkey-row,
+.shortcut-reference-row {
+  display: grid;
+  min-height: 36px;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 12px;
+  padding: 0 8px;
+}
+
+.toggle-row input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+}
+
+.hotkey-row {
+  grid-template-columns: 1fr 148px;
+}
+
+.shortcut-reference-row {
+  grid-template-columns: 1fr 148px;
+}
+
+.hotkey-row button,
+.about-block button {
+  min-height: 28px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.shortcut-reference-row kbd {
+  min-height: 28px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-secondary);
+  font-size: 11px;
+  line-height: 26px;
+  padding: 0 8px;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hotkey-capture {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hotkey-capture.active {
+  border-color: var(--accent);
+  color: var(--text-primary);
+}
+
+.settings-error {
+  margin: 8px 0 0;
+  color: #f87171;
+  font-size: 11px;
+}
+
+.about-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.about-block h3,
+.about-block p {
+  margin: 0;
+}
+
+.about-block h3 {
+  color: var(--text-primary);
+  font-size: 13px;
+}
+
+.about-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.about-block button {
+  width: 112px;
+}
