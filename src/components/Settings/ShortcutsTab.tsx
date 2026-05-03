@@ -127,6 +127,7 @@ const REFERENCE_SECTIONS: Array<{
       { keyCombo: "Left / Right", label: "Move between tags" },
       { keyCombo: "Backspace", label: "Delete tag" },
       { keyCombo: "Left on first", label: "Return to task" },
+      { keyCombo: "Sort by tag", label: "Group by rarest tag" },
     ],
   },
   {

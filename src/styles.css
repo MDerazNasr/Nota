@@ -217,6 +217,35 @@ input {
   scrollbar-width: none;
 }
 
+.item-list-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 6px;
+}
+
+.item-list-action {
+  display: inline-flex;
+  height: 24px;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 11px;
+  padding: 0 8px;
+}
+
+.item-list-action:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--text-primary);
+}
+
+.item-list-action:disabled {
+  cursor: default;
+  opacity: 0.35;
+}
+
 .empty-state {
   margin: 24px 0 0;
   color: var(--text-muted);

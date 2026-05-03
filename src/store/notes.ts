@@ -9,6 +9,7 @@ import {
   createItemModel,
   insertAt,
   removeItemState,
+  sortItemsByTagState,
 } from "./notesItems";
 import {
   buildMoveSelectionState,
@@ -61,6 +62,7 @@ type NotesStore = AppState & {
   finishItemDragAtItem: (target: ItemDropTarget | null) => void;
   cancelItemDrag: () => void;
   checkItem: (tabId: string, itemId: string) => void;
+  sortActiveTabByTag: () => void;
   deleteSelectedItems: () => void;
   setCursorIndex: (index: number) => void;
   moveCursor: (direction: "up" | "down") => void;
@@ -340,6 +342,9 @@ export const useNotesStore = create<NotesStore>((set, get) => ({
   cancelItemDrag: () => set({ draggingItemIds: [], dropTargetTabId: null, itemDropTarget: null }),
   checkItem: (tabId, itemId) => {
     commit(set, get, (state) => completeItemState(state, tabId, itemId));
+  },
+  sortActiveTabByTag: () => {
+    commit(set, get, (state) => sortItemsByTagState(state, state.activeTabId));
   },
   deleteSelectedItems: () => {
     commit(set, get, (state) => {

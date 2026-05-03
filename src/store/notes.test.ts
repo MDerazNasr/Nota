@@ -124,6 +124,29 @@ describe("notes store", () => {
     expect(activeTab().items.map((item) => item.tags.map((tag) => tag.name))).toEqual([["urgent"], []]);
   });
 
+  it("sorts active tab items by each item rarest tag", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0);
+
+    for (let index = 0; index < 5; index += 1) {
+      useNotesStore.getState().createItem("below");
+      useNotesStore.getState().setMode("nav");
+    }
+
+    const tab = activeTab();
+    const [commonOne, rareMulti, untagged, rareOnly, commonTwo] = tab.items.map((item) => item.id);
+
+    useNotesStore.getState().addItemTag(tab.id, commonOne, "common");
+    useNotesStore.getState().addItemTag(tab.id, rareMulti, "common");
+    useNotesStore.getState().addItemTag(tab.id, rareMulti, "rare");
+    useNotesStore.getState().addItemTag(tab.id, rareOnly, "rare");
+    useNotesStore.getState().addItemTag(tab.id, commonTwo, "common");
+    useNotesStore.getState().setCursorIndex(3);
+    useNotesStore.getState().sortActiveTabByTag();
+
+    expect(activeTab().items.map((item) => item.id)).toEqual([rareMulti, rareOnly, commonOne, commonTwo, untagged]);
+    expect(useNotesStore.getState().cursorIndex).toBe(1);
+  });
+
   it("moves selected items to another tab", () => {
     useNotesStore.getState().createItem("below");
     useNotesStore.getState().setMode("nav");

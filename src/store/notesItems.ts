@@ -1,5 +1,6 @@
 import { nanoid } from "nanoid";
 import { EMPTY_DOC } from "../lib/defaults";
+import { tagKey } from "../lib/tags";
 import type { AppState, Item } from "../lib/types";
 import { clampCursor } from "./notesSelectors";
 
@@ -55,6 +56,67 @@ export function completeItemState(
   itemId: string,
 ): Partial<ItemMutationState> {
   return toggleDoneItemState(state, tabId, itemId);
+}
+
+export function sortItemsByTagState(state: ItemMutationState, tabId: string): Partial<ItemMutationState> {
+  const tab = state.tabs.find((entry) => entry.id === tabId);
+
+  if (!tab || tab.items.length < 2 || !tab.items.some((item) => item.tags.length > 0)) {
+    return {};
+  }
+
+  const focusedId = tab.items[state.cursorIndex]?.id ?? null;
+  const items = sortItemsByTag(tab.items);
+  const cursorIndex = focusedId ? items.findIndex((item) => item.id === focusedId) : clampCursor(state.cursorIndex, { ...tab, items });
+
+  return {
+    tabs: state.tabs.map((entry) => (entry.id === tabId ? { ...entry, items } : entry)),
+    cursorIndex,
+  };
+}
+
+function sortItemsByTag(items: Item[]) {
+  const counts = tagCounts(items);
+
+  return items
+    .map((item, index) => ({ item, index, tag: primarySortTag(item, counts) }))
+    .sort((left, right) => {
+      // Completed tasks stay last because the crossed out state already uses the list bottom.
+      if (left.item.state !== right.item.state) {
+        return left.item.state === "done" ? 1 : -1;
+      }
+
+      if (!left.tag || !right.tag) {
+        return left.tag ? -1 : right.tag ? 1 : left.index - right.index;
+      }
+
+      return left.tag.count - right.tag.count || left.tag.key.localeCompare(right.tag.key) || left.index - right.index;
+    })
+    .map(({ item }) => item);
+}
+
+function tagCounts(items: Item[]) {
+  const counts = new Map<string, number>();
+
+  for (const item of items) {
+    const keys = new Set(item.tags.map((tag) => tagKey(tag.name)).filter(Boolean));
+
+    for (const key of keys) {
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+  }
+
+  return counts;
+}
+
+function primarySortTag(item: Item, counts: Map<string, number>) {
+  return item.tags
+    .map((tag) => {
+      const key = tagKey(tag.name);
+      return key ? { key, count: counts.get(key) ?? Number.MAX_SAFE_INTEGER } : null;
+    })
+    .filter((tag): tag is { key: string; count: number } => Boolean(tag))
+    .sort((left, right) => left.count - right.count || left.key.localeCompare(right.key))[0] ?? null;
 }
 
 function toggleDoneItemState(state: ItemMutationState, tabId: string, itemId: string): Partial<ItemMutationState> {
