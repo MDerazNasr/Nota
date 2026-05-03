@@ -67,12 +67,45 @@ const REFERENCE_SECTIONS: Array<{
     ],
   },
   {
-    label: "Task Vim",
+    label: "Task Vim modes",
     rows: [
       { keyCombo: "Esc", label: "Normal mode" },
-      { keyCombo: "i / A", label: "Insert mode" },
-      { keyCombo: "v / V", label: "Visual mode" },
+      { keyCombo: "i / a / I / A", label: "Insert mode" },
+      { keyCombo: "v / V", label: "Visual or line select" },
       { keyCombo: "Cmd+B / I / U", label: "Format selection" },
+    ],
+  },
+  {
+    label: "Task Vim movement",
+    rows: [
+      { keyCombo: "H/J/K/L", label: "Move inside task" },
+      { keyCombo: "Arrows", label: "Move inside task" },
+      { keyCombo: "W/B", label: "Jump by word" },
+      { keyCombo: "Shift+W/B", label: "Jump by WORD" },
+      { keyCombo: "0 / $", label: "Line start or end" },
+      { keyCombo: "gg / G", label: "Task start or end" },
+      { keyCombo: "%", label: "Matching bracket" },
+    ],
+  },
+  {
+    label: "Task Vim editing",
+    rows: [
+      { keyCombo: "u / Ctrl+R", label: "Undo or redo" },
+      { keyCombo: "x", label: "Delete character" },
+      { keyCombo: "yy / p", label: "Yank and paste line" },
+      { keyCombo: "dd", label: "Delete line" },
+      { keyCombo: "ciw / ciW", label: "Change word" },
+      { keyCombo: "di( / da(", label: "Delete parentheses" },
+      { keyCombo: "cit", label: "Change HTML tag" },
+    ],
+  },
+  {
+    label: "Task Vim search",
+    rows: [
+      { keyCombo: "/pattern", label: "Search task" },
+      { keyCombo: "n / N", label: "Next or previous match" },
+      { keyCombo: ":%s/old/new/g", label: "Replace all" },
+      { keyCombo: ":%s/old/new/gc", label: "Confirm replacements" },
     ],
   },
   {

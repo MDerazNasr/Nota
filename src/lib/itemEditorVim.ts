@@ -1,7 +1,37 @@
 import type { Editor } from "@tiptap/core";
 import { appendAfterTask } from "./itemSlash";
+import {
+  changeInnerWord,
+  deleteAroundPair,
+  deleteInsidePair,
+  deleteUnderCursor,
+  pasteAfterCursor,
+  yankCurrentLine,
+} from "./itemEditorVimOperators";
+import {
+  jumpToBoundary,
+  jumpToDocumentEdge,
+  jumpToMatchingBracket,
+  moveByCharacter,
+  moveByWord,
+  searchInTask,
+  selectCurrentCharacter,
+  selectWholeTask,
+} from "./itemEditorVimMotions";
+import type { ItemEditorVimState } from "./itemEditorVimState";
+import { recordCommandKey, resetVimState } from "./itemEditorVimState";
 
-export type ItemEditorMode = "insert" | "normal" | "visual";
+export type ItemEditorMode = "insert" | "normal" | "visual" | "visual-line";
+
+export function createItemEditorVimState(): ItemEditorVimState {
+  return {
+    clipboard: null,
+    commandBuffer: "",
+    lastSearch: null,
+    pendingExCommand: null,
+    pendingSearch: null,
+  };
+}
 
 export function handleEditorModeKey(
   event: KeyboardEvent,
@@ -9,6 +39,7 @@ export function handleEditorModeKey(
   editorMode: ItemEditorMode,
   setEditorMode: (mode: ItemEditorMode) => void,
   exitEditor: () => void,
+  vimState: ItemEditorVimState,
 ) {
   if (!editor) {
     return false;
@@ -19,131 +50,46 @@ export function handleEditorModeKey(
   }
 
   if (editorMode === "insert") {
-    if (event.key === "Escape") {
-      event.preventDefault();
-      setEditorMode("normal");
-      return true;
-    }
+    return handleInsertMode(event, setEditorMode, vimState);
+  }
 
-    return false;
+  if (handleSearchInput(event, editor, vimState)) {
+    return true;
+  }
+
+  if (handleExCommandInput(event, editor, vimState)) {
+    return true;
+  }
+
+  if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "r") {
+    event.preventDefault();
+    editor.chain().focus().redo().run();
+    resetVimState(vimState);
+    return true;
   }
 
   if (event.key === "Escape") {
     event.preventDefault();
-    if (editorMode === "visual") {
+    if (editorMode === "visual" || editorMode === "visual-line") {
       editor.commands.setTextSelection(editor.state.selection.to);
       setEditorMode("normal");
     } else {
       exitEditor();
     }
+    resetVimState(vimState);
     return true;
   }
 
-  if (event.key === "i") {
-    event.preventDefault();
-    editor.chain().focus().run();
-    setEditorMode("insert");
+  if (handleArrowMotion(event, editor, editorMode)) {
+    resetVimState(vimState);
     return true;
   }
 
-  if (event.key === "a") {
-    event.preventDefault();
-    moveEditorSelection(editor, "normal", 1);
-    editor.chain().focus().run();
-    setEditorMode("insert");
+  if (handleImmediateModeKey(event, editor, editorMode, setEditorMode, vimState)) {
     return true;
   }
 
-  if (event.key === "I") {
-    event.preventDefault();
-    moveToLineBoundary(editor, "start", "normal");
-    editor.chain().focus().run();
-    setEditorMode("insert");
-    return true;
-  }
-
-  if (event.key === "A") {
-    event.preventDefault();
-    appendAfterTask(editor);
-    setEditorMode("insert");
-    return true;
-  }
-
-  if (event.key === "v") {
-    event.preventDefault();
-    if (editorMode === "visual") {
-      setEditorMode("normal");
-    } else {
-      selectCurrentWord(editor);
-      setEditorMode("visual");
-    }
-    return true;
-  }
-
-  if (event.key === "V") {
-    event.preventDefault();
-    selectWholeTask(editor);
-    setEditorMode("visual");
-    return true;
-  }
-
-  if (event.key === "h" || event.key === "ArrowLeft" || event.key === "Backspace") {
-    event.preventDefault();
-    moveEditorSelection(editor, editorMode, -1);
-    return true;
-  }
-
-  if (event.key === "l" || event.key === "ArrowRight" || event.key === " ") {
-    event.preventDefault();
-    moveEditorSelection(editor, editorMode, 1);
-    return true;
-  }
-
-  if (event.key === "ArrowUp" || event.key === "k") {
-    event.preventDefault();
-    moveToLineBoundary(editor, "start", editorMode);
-    return true;
-  }
-
-  if (event.key === "ArrowDown" || event.key === "j") {
-    event.preventDefault();
-    moveToLineBoundary(editor, "end", editorMode);
-    return true;
-  }
-
-  if (event.key === "0" || event.key === "^" || event.key === "Home") {
-    event.preventDefault();
-    moveToLineBoundary(editor, "start", editorMode);
-    return true;
-  }
-
-  if (event.key === "$" || event.key === "End") {
-    event.preventDefault();
-    moveToLineBoundary(editor, "end", editorMode);
-    return true;
-  }
-
-  if (event.key === "w") {
-    event.preventDefault();
-    moveByWord(editor, editorMode, "next-start");
-    return true;
-  }
-
-  if (event.key === "b") {
-    event.preventDefault();
-    moveByWord(editor, editorMode, "previous-start");
-    return true;
-  }
-
-  if (event.key === "e") {
-    event.preventDefault();
-    moveByWord(editor, editorMode, "next-end");
-    return true;
-  }
-
-  if (event.key === "x" || event.key === "Delete") {
-    event.preventDefault();
-    deleteUnderCursor(editor);
+  if (handleBufferedCommand(event, editor, editorMode, setEditorMode, vimState)) {
     return true;
   }
 
@@ -155,140 +101,322 @@ export function handleEditorModeKey(
   return false;
 }
 
-function moveEditorSelection(editor: Editor, editorMode: ItemEditorMode, offset: -1 | 1) {
-  const selection = editor.state.selection;
-  const max = editor.state.doc.content.size;
-
-  if (editorMode === "visual") {
-    const anchor = selection.anchor;
-    const nextHead = clampPosition(selection.head + offset, 1, max);
-    editor.commands.setTextSelection({ from: anchor, to: nextHead });
-    return;
+function handleInsertMode(
+  event: KeyboardEvent,
+  setEditorMode: (mode: ItemEditorMode) => void,
+  vimState: ItemEditorVimState,
+) {
+  if (event.key === "Escape") {
+    event.preventDefault();
+    setEditorMode("normal");
+    resetVimState(vimState);
+    return true;
   }
 
-  const nextPosition = clampPosition(selection.to + offset, 1, max);
-  editor.commands.setTextSelection(nextPosition);
+  return false;
 }
 
-function moveToLineBoundary(editor: Editor, boundary: "start" | "end", editorMode: ItemEditorMode) {
-  const selection = editor.state.selection;
-  const { $from } = selection;
-  const next = boundary === "start" ? $from.start() : $from.end();
+function handleSearchInput(event: KeyboardEvent, editor: Editor, vimState: ItemEditorVimState) {
+  if (vimState.pendingSearch === null) {
+    return false;
+  }
 
-  if (editorMode === "visual") {
-    editor.commands.setTextSelection({ from: selection.anchor, to: next });
+  event.preventDefault();
+
+  if (event.key === "Escape") {
+    vimState.pendingSearch = null;
+    vimState.commandBuffer = "";
+    return true;
+  }
+
+  if (event.key === "Backspace") {
+    vimState.pendingSearch = vimState.pendingSearch.slice(0, -1);
+    return true;
+  }
+
+  if (event.key === "Enter") {
+    searchInTask(editor, vimState.pendingSearch, "next");
+    vimState.lastSearch = vimState.pendingSearch;
+    vimState.pendingSearch = null;
+    vimState.commandBuffer = "";
+    return true;
+  }
+
+  if (event.key.length === 1) {
+    vimState.pendingSearch += event.key;
+  }
+
+  return true;
+}
+
+function handleImmediateModeKey(
+  event: KeyboardEvent,
+  editor: Editor,
+  editorMode: ItemEditorMode,
+  setEditorMode: (mode: ItemEditorMode) => void,
+  vimState: ItemEditorVimState,
+) {
+  if (event.key === "i") {
+    event.preventDefault();
+    editor.chain().focus().run();
+    setEditorMode("insert");
+    resetVimState(vimState);
+    return true;
+  }
+
+  if (event.key === "a") {
+    event.preventDefault();
+    moveByCharacter(editor, "normal", 1);
+    editor.chain().focus().run();
+    setEditorMode("insert");
+    resetVimState(vimState);
+    return true;
+  }
+
+  if (event.key === "I") {
+    event.preventDefault();
+    jumpToBoundary(editor, "start", "normal");
+    editor.chain().focus().run();
+    setEditorMode("insert");
+    resetVimState(vimState);
+    return true;
+  }
+
+  if (event.key === "A") {
+    event.preventDefault();
+    appendAfterTask(editor);
+    setEditorMode("insert");
+    resetVimState(vimState);
+    return true;
+  }
+
+  if (event.key === "v") {
+    event.preventDefault();
+    if (editorMode === "visual") {
+      setEditorMode("normal");
+    } else {
+      selectCurrentCharacter(editor);
+      setEditorMode("visual");
+    }
+    resetVimState(vimState);
+    return true;
+  }
+
+  if (event.key === "V") {
+    event.preventDefault();
+    selectWholeTask(editor);
+    setEditorMode("visual-line");
+    resetVimState(vimState);
+    return true;
+  }
+
+  return false;
+}
+
+function handleArrowMotion(event: KeyboardEvent, editor: Editor, editorMode: ItemEditorMode) {
+  if (event.key === "ArrowLeft") {
+    event.preventDefault();
+    moveByCharacter(editor, editorMode, -1);
+    return true;
+  }
+
+  if (event.key === "ArrowRight") {
+    event.preventDefault();
+    moveByCharacter(editor, editorMode, 1);
+    return true;
+  }
+
+  if (event.key === "ArrowUp") {
+    event.preventDefault();
+    jumpToBoundary(editor, "start", editorMode);
+    return true;
+  }
+
+  if (event.key === "ArrowDown") {
+    event.preventDefault();
+    jumpToBoundary(editor, "end", editorMode);
+    return true;
+  }
+
+  return false;
+}
+
+function handleBufferedCommand(
+  event: KeyboardEvent,
+  editor: Editor,
+  editorMode: ItemEditorMode,
+  setEditorMode: (mode: ItemEditorMode) => void,
+  vimState: ItemEditorVimState,
+) {
+  const command = recordCommandKey(vimState, event.key);
+
+  if (!command) {
+    return false;
+  }
+
+  event.preventDefault();
+
+  if (isCommandPrefix(command)) {
+    return true;
+  }
+
+  const handled = runCommand(command, editor, editorMode, setEditorMode, vimState);
+
+  if (!handled) {
+    resetVimState(vimState);
+  }
+
+  return true;
+}
+
+function runCommand(
+  command: string,
+  editor: Editor,
+  editorMode: ItemEditorMode,
+  setEditorMode: (mode: ItemEditorMode) => void,
+  vimState: ItemEditorVimState,
+) {
+  if (command === "u") {
+    editor.chain().focus().undo().run();
+    resetVimState(vimState);
+    return true;
+  }
+
+  if (command === "h" || command === "Backspace") {
+    moveByCharacter(editor, editorMode, -1);
+  } else if (command === "l" || command === " ") {
+    moveByCharacter(editor, editorMode, 1);
+  } else if (command === "j") {
+    jumpToBoundary(editor, "end", editorMode);
+  } else if (command === "k") {
+    jumpToBoundary(editor, "start", editorMode);
+  } else if (command === "w" || command === "W") {
+    moveByWord(editor, editorMode, "next-start", command === "W");
+  } else if (command === "b" || command === "B") {
+    moveByWord(editor, editorMode, "previous-start", command === "B");
+  } else if (command === "0") {
+    jumpToBoundary(editor, "start", editorMode);
+  } else if (command === "$") {
+    jumpToBoundary(editor, "end", editorMode);
+  } else if (command === "gg") {
+    jumpToDocumentEdge(editor, "start", editorMode);
+  } else if (command === "G") {
+    jumpToDocumentEdge(editor, "end", editorMode);
+  } else if (command === "%") {
+    jumpToMatchingBracket(editor, editorMode);
+  } else if (command === "/") {
+    vimState.pendingSearch = "";
+    return true;
+  } else if (command === ":") {
+    vimState.pendingExCommand = "";
+    return true;
+  } else if (command === "n" || command === "N") {
+    searchInTask(editor, vimState.lastSearch, command === "n" ? "next" : "previous");
+  } else if (command === "x" || command === "Delete") {
+    deleteUnderCursor(editor);
+  } else if (command === "yy") {
+    vimState.clipboard = yankCurrentLine(editor);
+  } else if (command === "p") {
+    pasteAfterCursor(editor, vimState.clipboard);
+  } else if (command === "dd") {
+    vimState.clipboard = yankCurrentLine(editor);
+    editor.commands.clearContent();
+  } else if (command === "ciw" || command === "ciW") {
+    changeInnerWord(editor, command === "ciW");
+    setEditorMode("insert");
+  } else if (command === "di(") {
+    deleteInsidePair(editor, "(", ")");
+  } else if (command === "da(") {
+    deleteAroundPair(editor, "(", ")");
+  } else if (command === "cit") {
+    changeHtmlTag(editor);
+    setEditorMode("insert");
   } else {
-    editor.commands.setTextSelection(next);
+    return false;
   }
+
+  resetVimState(vimState);
+  return true;
 }
 
-function moveByWord(editor: Editor, editorMode: ItemEditorMode, motion: "next-start" | "previous-start" | "next-end") {
-  const selection = editor.state.selection;
-  const { $from } = selection;
-  const text = $from.parent.textBetween(0, $from.parent.content.size, undefined, "\ufffc");
-  const offset = $from.parentOffset;
-  const nextOffset =
-    motion === "previous-start" ? previousWordStart(text, offset) : motion === "next-end" ? nextWordEnd(text, offset) : nextWordStart(text, offset);
-  const nextPosition = clampPosition($from.start() + nextOffset, $from.start(), $from.end());
-
-  if (editorMode === "visual") {
-    editor.commands.setTextSelection({ from: selection.anchor, to: nextPosition });
-  } else {
-    editor.commands.setTextSelection(nextPosition);
+function handleExCommandInput(event: KeyboardEvent, editor: Editor, vimState: ItemEditorVimState) {
+  if (vimState.pendingExCommand === null) {
+    return false;
   }
+
+  event.preventDefault();
+
+  if (event.key === "Escape") {
+    vimState.pendingExCommand = null;
+    vimState.commandBuffer = "";
+    return true;
+  }
+
+  if (event.key === "Backspace") {
+    vimState.pendingExCommand = vimState.pendingExCommand.slice(0, -1);
+    return true;
+  }
+
+  if (event.key === "Enter") {
+    runExCommand(editor, vimState.pendingExCommand);
+    vimState.pendingExCommand = null;
+    vimState.commandBuffer = "";
+    return true;
+  }
+
+  if (event.key.length === 1) {
+    vimState.pendingExCommand += event.key;
+  }
+
+  return true;
 }
 
-function selectCurrentWord(editor: Editor) {
-  const { $from } = editor.state.selection;
-  const text = $from.parent.textBetween(0, $from.parent.content.size, undefined, "\ufffc");
-  const offset = $from.parentOffset;
-  const start = findWordBoundary(text, offset, -1);
-  const end = findWordBoundary(text, offset, 1);
+function runExCommand(editor: Editor, command: string) {
+  const replace = /^%s\/(.+)\/(.*)\/(g|gc)$/.exec(command);
 
-  if (start === end) {
+  if (!replace) {
     return;
   }
 
-  editor.commands.setTextSelection({ from: $from.start() + start, to: $from.start() + end });
+  const [, oldText, newText, flags] = replace;
+  const text = editor.state.doc.textBetween(0, editor.state.doc.content.size, "\n", "\ufffc");
+  let nextText = "";
+  let cursor = 0;
+
+  for (let index = text.indexOf(oldText); index >= 0; index = text.indexOf(oldText, cursor)) {
+    nextText += text.slice(cursor, index);
+    const confirmed = flags === "g" || window.confirm(`Replace "${oldText}" with "${newText}"?`);
+    nextText += confirmed ? newText : oldText;
+    cursor = index + oldText.length;
+  }
+
+  nextText += text.slice(cursor);
+
+  if (nextText !== text) {
+    editor.commands.setContent({ type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text: nextText }] }] });
+  }
 }
 
-function selectWholeTask(editor: Editor) {
-  const { $from } = editor.state.selection;
-  editor.commands.setTextSelection({ from: $from.start(), to: $from.end() });
-}
+function changeHtmlTag(editor: Editor) {
+  const text = editor.state.doc.textBetween(0, editor.state.doc.content.size, "\n", "\ufffc");
+  const selectionOffset = editor.state.selection.from - 1;
+  const openStart = text.lastIndexOf("<", selectionOffset);
+  const openEnd = openStart >= 0 ? text.indexOf(">", openStart) : -1;
 
-function deleteUnderCursor(editor: Editor) {
-  const selection = editor.state.selection;
-
-  if (!selection.empty) {
-    editor.commands.deleteSelection();
+  if (openStart < 0 || openEnd < selectionOffset) {
     return;
   }
 
-  const from = selection.from;
-  const to = clampPosition(from + 1, from, editor.state.doc.content.size);
+  const tagName = /^<\s*([A-Za-z][\w:-]*)\b/.exec(text.slice(openStart, openEnd + 1))?.[1];
+  const closeStart = tagName ? text.indexOf(`</${tagName}>`, selectionOffset) : -1;
 
-  if (from !== to) {
-    editor.commands.deleteRange({ from, to });
+  if (!tagName || closeStart < 0) {
+    return;
   }
+
+  editor.commands.deleteRange({ from: openEnd + 2, to: closeStart + 1 });
 }
 
-function nextWordStart(text: string, offset: number) {
-  let index = Math.min(offset + 1, text.length);
-
-  while (index < text.length && /\w/.test(text[index] ?? "")) {
-    index += 1;
-  }
-
-  while (index < text.length && !/\w/.test(text[index] ?? "")) {
-    index += 1;
-  }
-
-  return index;
-}
-
-function previousWordStart(text: string, offset: number) {
-  let index = Math.max(offset - 1, 0);
-
-  while (index > 0 && !/\w/.test(text[index] ?? "")) {
-    index -= 1;
-  }
-
-  while (index > 0 && /\w/.test(text[index - 1] ?? "")) {
-    index -= 1;
-  }
-
-  return index;
-}
-
-function nextWordEnd(text: string, offset: number) {
-  let index = Math.min(offset + 1, text.length);
-
-  while (index < text.length && !/\w/.test(text[index] ?? "")) {
-    index += 1;
-  }
-
-  while (index < text.length && /\w/.test(text[index + 1] ?? "")) {
-    index += 1;
-  }
-
-  return index;
-}
-
-function findWordBoundary(text: string, offset: number, direction: -1 | 1) {
-  let index = offset;
-
-  while (index > 0 && direction === -1 && /\w/.test(text[index - 1] ?? "")) {
-    index -= 1;
-  }
-
-  while (index < text.length && direction === 1 && /\w/.test(text[index] ?? "")) {
-    index += 1;
-  }
-
-  return index;
-}
-
-function clampPosition(position: number, min: number, max: number) {
-  return Math.min(Math.max(position, min), max);
+function isCommandPrefix(command: string) {
+  return ["g", "y", "d", "c", "ci", "di", "da"].includes(command);
 }

@@ -14,7 +14,7 @@ import {
   type LinkPopupState,
   type SlashState,
 } from "../lib/itemSlash";
-import { handleEditorModeKey, type ItemEditorMode } from "../lib/itemEditorVim";
+import { createItemEditorVimState, handleEditorModeKey, type ItemEditorMode } from "../lib/itemEditorVim";
 import { buildSlashItems } from "../lib/slashCommands";
 import { collectActiveTags } from "../lib/tags";
 import { isTagFocusTarget, moveTagFocus, tagFocusAfterRemoval } from "../lib/tagKeyboard";
@@ -46,6 +46,8 @@ type PointerDragTarget =
 export function Item({ dropPosition, focused, index, item, selected, tabId }: ItemProps) {
   const rowRef = useRef<HTMLElement>(null);
   const tagButtonRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  // Each editor owns its Vim buffers so search and yank state cannot leak between tasks.
+  const vimStateRef = useRef(createItemEditorVimState());
   const mode = useNotesStore((state) => state.mode);
   const setCursorIndex = useNotesStore((state) => state.setCursorIndex);
   const setMode = useNotesStore((state) => state.setMode);
@@ -104,7 +106,7 @@ export function Item({ dropPosition, focused, index, item, selected, tabId }: It
         if (handleEditorModeKey(event, editor, editorMode, setEditorMode, () => {
           setMode("nav");
           view.dom.blur();
-        })) {
+        }, vimStateRef.current)) {
           return true;
         }
 
@@ -420,7 +422,7 @@ export function Item({ dropPosition, focused, index, item, selected, tabId }: It
       </div>
       {cursorRect ? (
         <span
-          className={editorMode === "visual" ? "vim-block-cursor visual" : "vim-block-cursor"}
+          className={editorMode === "visual" || editorMode === "visual-line" ? "vim-block-cursor visual" : "vim-block-cursor"}
           style={{ height: cursorRect.height, left: cursorRect.left, top: cursorRect.top }}
         />
       ) : null}
