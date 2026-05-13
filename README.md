@@ -82,6 +82,7 @@ The full Tauri bundle target may require extra local signing or packaging setup.
 | Focus tabs | `k` from the first item |
 | Switch focused tab | `h` / `l` |
 | Rename focused tab | `i` |
+| Move focused tab | `Space`, then `h` / `l`, then `Space` |
 
 ### Tasks
 

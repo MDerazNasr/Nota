@@ -39,6 +39,11 @@ export function useKeymap({ settingsOpen, setSettingsOpen }: KeymapOptions) {
         return;
       }
 
+      if (store.mode === "tab-move") {
+        handleTabMoveKey(event);
+        return;
+      }
+
       if (event.key === "Escape" && settingsOpen) {
         setSettingsOpen(false);
         return;
@@ -238,9 +243,27 @@ function handleTabModeKey(event: KeyboardEvent) {
     event.preventDefault();
     const store = useNotesStore.getState();
     store.setEditingTabId(store.activeTabId);
+  } else if (event.key === " ") {
+    event.preventDefault();
+    useNotesStore.getState().setMode("tab-move");
   } else if (event.key === "j" || event.key === "Escape") {
     event.preventDefault();
     useNotesStore.getState().setMode("nav");
+  }
+}
+
+function handleTabMoveKey(event: KeyboardEvent) {
+  const store = useNotesStore.getState();
+
+  if (event.key === "h") {
+    event.preventDefault();
+    store.reorderTab(store.activeTabId, "left");
+  } else if (event.key === "l") {
+    event.preventDefault();
+    store.reorderTab(store.activeTabId, "right");
+  } else if (event.key === " " || event.key === "Escape") {
+    event.preventDefault();
+    store.setMode("tabs");
   }
 }
 

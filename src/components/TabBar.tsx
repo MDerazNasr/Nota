@@ -41,7 +41,7 @@ export function TabBar() {
             />
           ) : (
             <button
-              className={tabClassName(tab.id === activeTabId, mode === "tabs")}
+              className={tabClassName(tab.id === activeTabId, mode)}
               type="button"
               title={tab.title}
               onClick={() => setActiveTab(tab.id)}
@@ -79,8 +79,15 @@ export function TabBar() {
   );
 }
 
-function tabClassName(active: boolean, tabMode: boolean) {
-  return ["tab-pill", active ? "active" : "", active && tabMode ? "tab-focused" : ""].filter(Boolean).join(" ");
+function tabClassName(active: boolean, mode: string) {
+  return [
+    "tab-pill",
+    active ? "active" : "",
+    active && mode === "tabs" ? "tab-focused" : "",
+    active && mode === "tab-move" ? "tab-moving" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 }
 
 type TabTitleInputProps = {
