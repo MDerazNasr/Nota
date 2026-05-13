@@ -5,6 +5,10 @@ use tauri_plugin_store::StoreExt;
 const DEFAULT_WINDOW_WIDTH: u32 = 380;
 const DEFAULT_WINDOW_HEIGHT: u32 = 560;
 const LEGACY_DEFAULT_WINDOW_HEIGHT: u32 = 500;
+const MIN_WINDOW_WIDTH: u32 = 300;
+const MIN_WINDOW_HEIGHT: u32 = 400;
+const MAX_WINDOW_WIDTH: u32 = 800;
+const MAX_WINDOW_HEIGHT: u32 = 900;
 const DEFAULT_EDGE_OFFSET: i32 = 16;
 
 pub fn restore_window_state<R: Runtime>(app: &AppHandle<R>) {
@@ -22,12 +26,14 @@ pub fn restore_window_state<R: Runtime>(app: &AppHandle<R>) {
         let width = size.get("width").and_then(|value| value.as_u64());
         let height = size.get("height").and_then(|value| value.as_u64());
         if let (Some(width), Some(height)) = (width, height) {
-            let height = if width == DEFAULT_WINDOW_WIDTH as u64 && height == LEGACY_DEFAULT_WINDOW_HEIGHT as u64 {
+            let height = if width == DEFAULT_WINDOW_WIDTH as u64
+                && height == LEGACY_DEFAULT_WINDOW_HEIGHT as u64
+            {
                 DEFAULT_WINDOW_HEIGHT
             } else {
                 height as u32
             };
-            restored_size = Some(PhysicalSize::new(width as u32, height));
+            restored_size = Some(clamp_window_size(PhysicalSize::new(width as u32, height)));
         }
     }
 
@@ -57,9 +63,17 @@ pub fn save_window_position<R: Runtime>(app: &AppHandle<R>, x: i32, y: i32) {
 
 pub fn save_window_size<R: Runtime>(app: &AppHandle<R>, width: u32, height: u32) {
     if let Ok(store) = app.store("settings.json") {
-        store.set("windowSize", json!({ "width": width, "height": height }));
+        let size = clamp_window_size(PhysicalSize::new(width, height));
+        store.set("windowSize", json!({ "width": size.width, "height": size.height }));
         let _ = store.save();
     }
+}
+
+fn clamp_window_size(size: PhysicalSize<u32>) -> PhysicalSize<u32> {
+    PhysicalSize::new(
+        size.width.clamp(MIN_WINDOW_WIDTH, MAX_WINDOW_WIDTH),
+        size.height.clamp(MIN_WINDOW_HEIGHT, MAX_WINDOW_HEIGHT),
+    )
 }
 
 fn default_top_right_position<R: Runtime>(
