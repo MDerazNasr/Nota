@@ -1,9 +1,6 @@
 # Swift Rebuild Spec for nota
 
-This is the primary prompt for rebuilding nota as a native Swift macOS app. Use the appendices for exact theme values, detailed navigation, settings behavior, and acceptance checks:
-
-- `SWIFT_REBUILD_UI_APPENDIX.md`
-- `SWIFT_REBUILD_BEHAVIOR_APPENDIX.md`
+This is the complete one-file prompt for rebuilding nota as a native Swift macOS app. It intentionally exceeds the normal 500-line documentation limit because the project owner requested a single self-contained rebuild specification.
 
 ## LLM Role
 
@@ -355,3 +352,449 @@ The Swift rebuild should be suitable for open source distribution.
 - `SettingsPanel`: settings overlay and settings keymap.
 
 The final app should look and behave like the existing nota build, not like a generic SwiftUI document app.
+
+# UI Details
+
+This section contains exact UI tokens, theme values, fonts, and settings layout details for the native Swift rebuild.
+
+## Design Tokens
+
+Semantic colors:
+
+- `bg`
+- `surface`
+- `surfaceHover`
+- `border`
+- `textPrimary`
+- `textSecondary`
+- `textMuted`
+- `accent`
+- `accentMuted`
+- `doneOpacity`
+
+Default theme: `dark-zinc`.
+
+Default font: `JetBrains Mono`.
+
+Default font size: `13`.
+
+Default item radius: `8`.
+
+## Theme Values
+
+| Key | Name | bg | surface | hover | border | primary | secondary | muted | accent | accent muted | done |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| dark-zinc | Dark | #09090b | #18181b | #27272a | #3f3f46 | #f4f4f5 | #a1a1aa | #71717a | #4F8EF7 | rgb(79 142 247 / 30%) | 0.45 |
+| light | Light | #ffffff | #f8fafc | #e2e8f0 | #cbd5e1 | #0f172a | #475569 | #64748b | #2563EB | rgb(37 99 235 / 30%) | 0.45 |
+| paper-trail | Paper Trail | #fbf7ef | #f1eadf | #e6d9c8 | #c9b8a3 | #211f1c | #5b5146 | #8a7b69 | #b45309 | rgb(180 83 9 / 24%) | 0.48 |
+| blueprint | Blueprint | #eef6ff | #dbeafe | #bfdbfe | #93c5fd | #10233f | #315b8d | #64748b | #dc2626 | rgb(220 38 38 / 20%) | 0.46 |
+| matcha | Matcha | #f4f7ed | #e5ead8 | #d4dec2 | #a8b58e | #1f2a1d | #526641 | #7b856d | #0f766e | rgb(15 118 110 / 22%) | 0.46 |
+| lilac-light | Lilac Light | #faf5ff | #f3e8ff | #e9d5ff | #c4b5fd | #2e1065 | #6d28d9 | #8b5cf6 | #db2777 | rgb(219 39 119 / 22%) | 0.46 |
+| sunrise | Sunrise | #fff7ed | #ffedd5 | #fed7aa | #fdba74 | #32170c | #9a3412 | #c2410c | #7c3aed | rgb(124 58 237 / 20%) | 0.47 |
+| candy-terminal | Candy Terminal | #12071f | #21112f | #321845 | #653780 | #ffe4f3 | #a7f3d0 | #d8b4fe | #fb7185 | rgb(251 113 133 / 28%) | 0.46 |
+| acid-graphite | Acid Graphite | #111315 | #1c1f22 | #292d31 | #464d53 | #f2f7f2 | #b5c2b8 | #7f8b83 | #d9f99d | rgb(217 249 157 / 24%) | 0.45 |
+| lagoon | Lagoon | #061a1f | #0b2a31 | #123842 | #27616d | #e0fbfc | #98f5e1 | #70a9a1 | #f4d35e | rgb(244 211 94 / 24%) | 0.45 |
+| catppuccin-mocha | Catppuccin Mocha | #1e1e2e | #313244 | #45475a | #585b70 | #cdd6f4 | #bac2de | #7f849c | #cba6f7 | rgb(203 166 247 / 30%) | 0.45 |
+| dracula | Dracula | #282a36 | #44475a | #565a72 | #6272a4 | #f8f8f2 | #d7d7d0 | #a4a5b5 | #bd93f9 | rgb(189 147 249 / 30%) | 0.45 |
+| rose-pine | Rose Pine | #191724 | #1f1d2e | #26233a | #403d52 | #e0def4 | #908caa | #6e6a86 | #ebbcba | rgb(235 188 186 / 30%) | 0.45 |
+| tokyo-night | Tokyo Night | #16161e | #1f2335 | #292e42 | #3b4261 | #c0caf5 | #a9b1d6 | #565f89 | #7aa2f7 | rgb(122 162 247 / 30%) | 0.45 |
+| solarized-dark | Solarized Dark | #002b36 | #073642 | #0b4654 | #586e75 | #fdf6e3 | #93a1a1 | #657b83 | #2aa198 | rgb(42 161 152 / 30%) | 0.45 |
+| gruvbox-dark | Gruvbox Dark | #1d2021 | #282828 | #3c3836 | #504945 | #ebdbb2 | #d5c4a1 | #928374 | #83a598 | rgb(131 165 152 / 30%) | 0.45 |
+| everforest-dark | Everforest Dark | #1e2326 | #272e33 | #343f44 | #4f5b58 | #d3c6aa | #a7c080 | #859289 | #a7c080 | rgb(167 192 128 / 30%) | 0.45 |
+| nord-dark | Nord | #2e3440 | #3b4252 | #434c5e | #4c566a | #eceff4 | #d8dee9 | #81a1c1 | #88c0d0 | rgb(136 192 208 / 30%) | 0.45 |
+| one-dark | One Dark | #1f2329 | #282c34 | #323842 | #4b5263 | #abb2bf | #98c379 | #5c6370 | #61afef | rgb(97 175 239 / 30%) | 0.45 |
+| monokai | Monokai | #1b1d1e | #272822 | #3e3d32 | #5b5a4c | #f8f8f2 | #cfcfc2 | #75715e | #a6e22e | rgb(166 226 46 / 28%) | 0.45 |
+| kanagawa-wave | Kanagawa | #1f1f28 | #2a2a37 | #363646 | #54546d | #dcd7ba | #c8c093 | #727169 | #7e9cd8 | rgb(126 156 216 / 30%) | 0.45 |
+| ayu-dark | Ayu Dark | #0b0e14 | #11151c | #1b2330 | #2d3640 | #bfbdb6 | #e6b673 | #5c6773 | #39bae6 | rgb(57 186 230 / 30%) | 0.45 |
+| night-owl | Night Owl | #011627 | #0b2942 | #123653 | #1d3b53 | #d6deeb | #82aaff | #637777 | #addb67 | rgb(173 219 103 / 28%) | 0.45 |
+| palenight | Palenight | #292d3e | #30364a | #3a4159 | #676e95 | #eeffff | #c3e88d | #8796b0 | #ffcb6b | rgb(255 203 107 / 28%) | 0.45 |
+| github-dark | GitHub Dark | #0d1117 | #161b22 | #21262d | #30363d | #e6edf3 | #8b949e | #6e7681 | #2f81f7 | rgb(47 129 247 / 30%) | 0.45 |
+| high-contrast | High Contrast | #000000 | #111111 | #1f1f1f | #5f5f5f | #ffffff | #d4d4d4 | #a3a3a3 | #00e5ff | rgb(0 229 255 / 32%) | 0.5 |
+
+## Fonts
+
+- JetBrains Mono
+- SF Mono
+- IBM Plex Mono
+- Geist Mono
+- Fira Code
+- Iosevka
+- Inconsolata
+- Space Mono
+- Berkeley Mono
+
+## Tag Colors
+
+New tag colors are randomly selected from this palette:
+
+- `#4f8ef7`
+- `#14b8a6`
+- `#22c55e`
+- `#eab308`
+- `#f97316`
+- `#ef4444`
+- `#ec4899`
+- `#8b5cf6`
+- `#06b6d4`
+- `#84cc16`
+
+## Settings Overlay
+
+- Full app overlay, inset `0`.
+- Background surface.
+- Slides horizontally over `200ms`.
+- Header height `36`, border bottom, padding `0 12`.
+- Header title `Settings`, font size `12`, weight `700`.
+- Close icon button on the right.
+- Tabs: Appearance, Navigation, About.
+- Settings tabs use 3 equal columns, gap `4`, padding `12 18 8`.
+- Active settings tab has accent border and primary text.
+- Settings content padding `12 18 18`.
+- Settings content gap `4`.
+- Scrollbar is grey using text muted.
+- No selector or cursor appears in About.
+
+## Appearance Tab
+
+- Theme row uses a `5` column grid.
+- Swatches are `24 x 24`, gap `8`.
+- Swatch strips are bg, surface, accent.
+- Active swatch has accent border.
+- Font select lists all fonts exactly.
+- Font Size slider range `10...20`.
+- Radius slider range `0...12`.
+- Item Limit slider range `5...50`.
+- Row min height `40`.
+- Row grid columns: label `88`, control `1fr`, reset `28`.
+- Row gap `8`, padding `4 8`, bottom border.
+- Reset button `24 x 24`, circular.
+
+## Navigation Tab
+
+Behavior toggles:
+
+- Open on startup.
+- Show in dock.
+- Show in menu bar.
+
+Navigation sections:
+
+- Window
+- Tabs
+- Item editing
+- Item movement
+- App navigation
+- Slash menu
+- Task links
+- Task Vim modes
+- Task Vim movement
+- Task Vim editing
+- Task Vim search
+- Task tags
+- Move mode
+
+Controls:
+
+- Checkboxes are `18 x 18`.
+- Editable shortcut rows use a label and capture button.
+- Capture button text is `Press keys` while recording.
+- Backspace clears a shortcut.
+- Escape cancels capture.
+- Non-editable rows show shortcut text in a `kbd` style.
+
+## Settings Keyboard
+
+- Settings opens on Appearance with focus index `0`.
+- `j/k`: move selector up/down.
+- `h/l`: switch settings tabs.
+- Enter or Space activates selected row.
+- Left/Right adjust selected row where applicable.
+- Theme row only: Left/Right cycles horizontally.
+- Theme row only: Up/Down moves vertically by 5 swatches.
+- Up/Down arrows must not navigate any other settings row.
+- Sliders respond to Left/Right.
+- Select controls respond to Left/Right and Space/Enter.
+- Checkboxes respond to Space/Enter and Left/Right.
+- Escape closes settings.
+- Shortcut capture blocks settings navigation.
+- After changing font, toggles, sliders, or themes, selector remains visible and navigation still works.
+
+## About Tab
+
+- Shows the product copy exactly from the main spec.
+- Buttons: Repository and LinkedIn.
+- Repository URL: `https://github.com/MDerazNasr/Nota`
+- LinkedIn URL: `https://www.linkedin.com/in/mohamed-deraz-nasr-21825b203/`
+- No row selector or Vim cursor appears in About.
+
+# Behavior Details
+
+This section contains detailed navigation, Vim, movement, sorting, and verification requirements for the native Swift rebuild.
+
+## Main Navigation
+
+In nav mode:
+
+- `j`: move focused item down, wrapping.
+- `k`: move focused item up, wrapping. If already at first item, enter tabs mode.
+- `H`: move to top visible item.
+- `M`: move to middle visible item.
+- `L`: move to bottom visible item.
+- `h`: switch to previous tab.
+- `l`: switch to next tab.
+- `o`: create item below and enter edit.
+- `O`: create item above and enter edit.
+- `i`: edit focused item.
+- `dd`: delete focused item, where the second `d` arrives within `500ms`.
+- Delete: delete focused item.
+- Space: enter move mode.
+- `u`: app-level undo.
+- `Cmd+1...Cmd+9`: switch to numbered tab.
+- `Cmd+T`: new tab.
+- `Cmd+W`: delete active tab.
+- `Cmd+,`: toggle settings.
+- `Cmd+.`: toggle tag sort for active tab.
+- `Cmd+X`: open first link on focused task.
+
+Tabs mode:
+
+- Entered by pressing `k` on the first item.
+- Active tab gets a focused visual state.
+- `h/l`: switch active tab.
+- `i`: rename active tab.
+- Space: enter tab move mode.
+- `j` or Escape: return to nav mode.
+
+Tab move mode:
+
+- Active tab gets moving visual state.
+- `h/l`: reorder active tab left or right.
+- Space or Escape: apply order and return to tabs mode.
+
+## Move Mode
+
+- Enter with Space from nav mode on a focused item.
+- If focused item is not already selected, select only that item.
+- Space or Escape exits move mode and clears selection.
+- `u`: app-level undo, separate from task editor undo.
+- `d`: delete selected tasks.
+- `j/k`: reorder selected tasks within current tab.
+- `Shift+j/k`: range select from anchor to next item.
+- `Cmd+j/k` or `Ctrl+j/k`: add or remove one item at a time.
+- `h/l` or Left/Right: move selection to adjacent tab.
+- Keyboard movement preserves selection visuals and cursor.
+
+Pointer drag:
+
+- Drag handle starts item drag.
+- If dragged item is in current selection, drag all selected items.
+- Otherwise drag only that item.
+- Drag over another item shows before/after drop line based on vertical midpoint.
+- Drag over a tab marks it as drop target.
+- Dropping on a tab moves items to that tab up to item limit.
+- Dropping on an item reorders inside that tab.
+- Cancelling drag clears drag and drop state.
+
+## Task Editor
+
+Use an `NSTextView` wrapper with a per-task Vim controller. Do not use a plain SwiftUI `TextField`.
+
+Editing behavior:
+
+- Clicking a task focuses it and enters edit mode.
+- When a task becomes editable, default to insert mode and focus at end.
+- Escape in insert mode enters normal mode.
+- Escape in normal mode exits task editing to nav.
+- Escape in visual modes clears selection and returns to normal.
+- `Cmd+B`, `Cmd+I`, `Cmd+U` format selection or active typing attributes.
+- `Cmd+Enter` toggles done.
+- `Cmd+X` opens first link in focused task.
+- Clicking a link opens it externally.
+- After inserting a link through `/link`, return to normal mode.
+- Pressing `A` in normal mode moves to task end, clears link typing attributes, and enters insert mode.
+
+Task Vim movement:
+
+- `h` or Left Arrow: move one character left.
+- `l`, Space, or Right Arrow: move one character right.
+- Up Arrow: move to start of task.
+- Down Arrow: move to end of task.
+- `j/k`: no-op inside one-line tasks.
+- `w/b`: jump by word.
+- `W/B`: jump by whitespace-delimited WORD.
+- `0/$`: start and end of task.
+- `gg/G`: start and end of task.
+- `%`: jump between matching brackets, parentheses, or braces.
+
+Task Vim modes:
+
+- `i`: insert at cursor.
+- `a`: insert after cursor.
+- `I`: insert at task start.
+- `A`: insert at task end after clearing link mark.
+- `v`: visual character selection.
+- `V`: visual line selection, which selects the whole task.
+
+Task Vim editing:
+
+- `u`: editor undo while inside a task editor.
+- `Ctrl+R`: editor redo while inside a task editor.
+- `x` or Delete: delete character under cursor.
+- `yy`: yank whole task text to task-local Vim clipboard.
+- `p`: paste after cursor.
+- `dd`: clear task text and store previous text in Vim clipboard.
+- `ciw`: change inner word and enter insert.
+- `ciW`: change inner WORD and enter insert.
+- `di(`: delete inside parentheses.
+- `da(`: delete around parentheses.
+- `cit`: change text inside an HTML/XML tag and enter insert.
+
+Task Vim search and replace:
+
+- `/pattern`: start a task-local search.
+- Enter: confirm search.
+- `n`: next search match.
+- `N`: previous search match.
+- `:%s/old/new/g`: replace all matches in task.
+- `:%s/old/new/gc`: confirm each replacement.
+- Escape cancels pending search or ex command.
+
+## Slash Menu, Tags, and Links
+
+Slash detection:
+
+- In insert mode, if text before cursor ends with `/query`, show slash menu below cursor.
+- Menu width `200`, max height `180`, padding `4`.
+- Menu uses surface background, border, radius, and shadow.
+
+Slash actions:
+
+- `/link` opens link popup.
+- Any other non-empty query creates or selects a tag.
+- Existing tags appear as suggestions when they start with query and are not already on task.
+- If query exactly matches `link`, do not create a tag.
+- If query exactly matches an existing tag, do not create duplicate.
+- Enter uses selected suggestion.
+- Escape dismisses and removes slash text.
+- Typing letters, including `j` and `k`, remains text input.
+
+Tag behavior:
+
+- A task can have multiple tags.
+- Normalize by trimming, removing leading slashes, collapsing whitespace, and lowercasing for identity.
+- Reuse existing color for matching normalized tag.
+- Randomly assign palette color for a new tag.
+- Active tag suggestions are derived only from tags present on at least one task.
+- When the final task using a tag loses it or is deleted, remove the tag from suggestions.
+
+Tag UI:
+
+- Tags sit to the right of task text and wrap.
+- Gap `4`.
+- Tag height `18`.
+- Max width `112`.
+- Pill radius `999`.
+- Border and text color are tag color.
+- Padding `0 3 0 6`.
+- Font size `10`.
+- Remove button `12 x 12`, circular, with an `x`.
+- Active keyboard tag has subtle color background and one-pixel outline.
+
+Tag keyboard:
+
+- Right Arrow at text end enters tag focus if tags exist.
+- Left/Right arrows move through tags.
+- Backspace or Delete removes focused tag.
+- Left Arrow on first tag returns to task text in normal mode.
+- Escape returns to task text in normal mode.
+- A strong blinking cursor or equivalent focus indicator remains visible in tag area.
+
+Link popup:
+
+- Opens from `/link`.
+- Width `220`, gap `6`, padding `8`.
+- Two inputs: Label and URL.
+- Focus jumps immediately to Label.
+- `Tab` or empty-field `n`: move to URL.
+- `Shift+Tab` or empty-field `N`: move to Label.
+- Enter inserts link if both fields are non-empty.
+- Escape cancels.
+- After insertion, close popup, focus editor, and set normal mode.
+- Normalize missing URL scheme to usable external URL.
+- Popup always disappears after submit, cancel, blur away, or editor exit.
+
+## Done, Delete, Undo, and Sort
+
+Done:
+
+- `Cmd+Enter` toggles focused task done.
+- Done tasks are crossed out and moved to bottom.
+- Unchecking removes done styling and keeps the task in the list.
+- There is no archive UI or behavior.
+
+Delete:
+
+- `dd` deletes focused task in nav mode.
+- Delete deletes focused task.
+- `d` in move mode deletes selected tasks.
+- `Cmd+W` deletes current list.
+
+Undo:
+
+- App-level mutations push previous app state.
+- App-level `u` restores previous app state.
+- Restore resets mode to nav, clears selection and drag state, and clears active tag sort state.
+- Task editor `u` is editor undo and must not trigger app-level undo.
+
+Tag sort:
+
+- Button lives next to settings in title bar.
+- Shortcut `Cmd+.` toggles it.
+- Sorting is per active tab.
+- On enable, save original item ID order for that tab.
+- On disable, restore saved order.
+- New items not in saved order append after restored items.
+- Done items stay after active items.
+- Untagged items sort after tagged items within their done or active group.
+- For multiple tags, choose the rarest tag as primary sort tag.
+- Rarest means tag appears on the fewest tasks in current tab, counted once per task.
+- Tie break by normalized tag name alphabetically.
+- Final tie break by original item order.
+
+## Acceptance Checklist
+
+- Fresh launch appears top right at `380 x 560`.
+- Move and resize window, hide it, toggle back, and geometry persists.
+- Offscreen stored position clamps or falls back.
+- `Option+Shift+N` toggles visibility.
+- `Cmd+,` opens and closes settings.
+- `Cmd+W` deletes current list and creates a replacement when it was the last list.
+- `o` creates a task below and enters editing.
+- `O` creates above.
+- `i` edits a task and Enter is not required.
+- `j/k` move list cursor and scroll focused row into view.
+- `H/M/L` move to top, middle, bottom visible item.
+- Tab focus with `k` on first item works.
+- Tab switching with `h/l`, rename with `i`, and reorder with Space plus `h/l` work.
+- Item move mode supports single selection, range selection, multi selection, reorder, adjacent-tab move, delete selected, and undo.
+- Pointer drag reorders within a tab and moves between tabs.
+- Done tasks cross out and move to bottom.
+- There is no archive UI or behavior.
+- Slash menu supports `/link`, existing tags, and create tag.
+- Typing `j` or `k` in slash mode inserts those letters.
+- Tag colors persist while any task still uses the tag.
+- Tags disappear from suggestions when no task uses them.
+- Keyboard tag focus, tag deletion, and returning to task text work.
+- `/link` focuses Label.
+- Tab or `n` moves link popup focus to URL.
+- Shift+Tab or `N` returns link popup focus to Label.
+- Enter inserts link, popup closes, and editor returns to normal mode.
+- `A` after a link exits link typing and appends normal text.
+- Links are underlined and `Cmd+X` opens first focused task link.
+- Normal-mode Vim cursor is thick, white, blinking, and covers intended character.
+- All listed task Vim motions, modes, editing commands, search, and replace work per task.
+- Settings keyboard navigation remains usable after changing font, toggles, sliders, and themes.
+- Up/Down arrow keys affect only the theme grid and no other setting.
+- About has no selector cursor.
+- All themes and fonts render without clipping or unreadable contrast.
+- App-level undo and task-editor undo are separate.
