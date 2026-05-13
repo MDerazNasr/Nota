@@ -20,7 +20,6 @@ const HOTKEY_SECTIONS: Array<{
     label: "Tabs",
     shortcuts: [
       { key: "newTab", label: "New tab" },
-      { key: "renameTab", label: "Rename tab" },
       { key: "moveTabLeft", label: "Move tab left" },
       { key: "moveTabRight", label: "Move tab right" },
     ],
@@ -52,7 +51,11 @@ const REFERENCE_SECTIONS: Array<{
     label: "App navigation",
     rows: [
       { keyCombo: "J/K", label: "Move cursor" },
-      { keyCombo: "H/L", label: "Switch tabs" },
+      { keyCombo: "K at first item", label: "Focus tabs" },
+      { keyCombo: "H/M/L", label: "Top, middle, bottom item" },
+      { keyCombo: "Tab focus H/L", label: "Switch tabs" },
+      { keyCombo: "Tab focus I", label: "Rename tab" },
+      { keyCombo: "Tab focus J", label: "Return to tasks" },
       { keyCombo: "J/K", label: "Move settings selector" },
       { keyCombo: "Left/Right", label: "Adjust selected setting" },
       { keyCombo: "Left/Right on theme", label: "Cycle color schemes" },
@@ -83,13 +86,14 @@ const REFERENCE_SECTIONS: Array<{
       { keyCombo: "Esc", label: "Normal mode" },
       { keyCombo: "i / a / I / A", label: "Insert mode" },
       { keyCombo: "v / V", label: "Visual or line select" },
+      { keyCombo: "j / k", label: "No-op inside one-line tasks" },
       { keyCombo: "Cmd+B / I / U", label: "Format selection" },
     ],
   },
   {
     label: "Task Vim movement",
     rows: [
-      { keyCombo: "H/J/K/L", label: "Move inside task" },
+      { keyCombo: "H/L", label: "Move inside task" },
       { keyCombo: "Arrows", label: "Move inside task" },
       { keyCombo: "W/B", label: "Jump by word" },
       { keyCombo: "Shift+W/B", label: "Jump by WORD" },

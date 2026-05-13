@@ -115,6 +115,7 @@ describe("persist", () => {
     expect(settings.windowPosition).toEqual({ x: 80, y: 120 });
     expect(settings.windowSize).toEqual({ width: 380, height: 500 });
     expect(settings.shortcuts.toggleWindow).toBe("Alt+Shift+KeyN");
+    expect(settings.shortcuts.editItem).toBe("I");
     expect(settings.shortcuts.openItemLink).toBe("CommandOrControl+X");
   });
 

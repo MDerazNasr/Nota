@@ -1,6 +1,6 @@
 import type { AppState, Item } from "../lib/types";
 
-export type MovementMode = "nav" | "edit" | "move";
+export type MovementMode = "nav" | "edit" | "move" | "tabs";
 
 export type ItemDropTarget = {
   tabId: string;

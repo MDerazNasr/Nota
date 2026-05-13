@@ -3,7 +3,8 @@ use tauri::{AppHandle, Manager, PhysicalPosition, PhysicalSize, Runtime};
 use tauri_plugin_store::StoreExt;
 
 const DEFAULT_WINDOW_WIDTH: u32 = 380;
-const DEFAULT_WINDOW_HEIGHT: u32 = 500;
+const DEFAULT_WINDOW_HEIGHT: u32 = 560;
+const LEGACY_DEFAULT_WINDOW_HEIGHT: u32 = 500;
 const DEFAULT_EDGE_OFFSET: i32 = 16;
 
 pub fn restore_window_state<R: Runtime>(app: &AppHandle<R>) {
@@ -21,7 +22,12 @@ pub fn restore_window_state<R: Runtime>(app: &AppHandle<R>) {
         let width = size.get("width").and_then(|value| value.as_u64());
         let height = size.get("height").and_then(|value| value.as_u64());
         if let (Some(width), Some(height)) = (width, height) {
-            restored_size = Some(PhysicalSize::new(width as u32, height as u32));
+            let height = if width == DEFAULT_WINDOW_WIDTH as u64 && height == LEGACY_DEFAULT_WINDOW_HEIGHT as u64 {
+                DEFAULT_WINDOW_HEIGHT
+            } else {
+                height as u32
+            };
+            restored_size = Some(PhysicalSize::new(width as u32, height));
         }
     }
 

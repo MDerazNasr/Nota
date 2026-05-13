@@ -8,6 +8,7 @@ export function ItemList() {
   const activeTabId = useNotesStore((state) => state.activeTabId);
   const cursorIndex = useNotesStore((state) => state.cursorIndex);
   const itemDropTarget = useNotesStore((state) => state.itemDropTarget);
+  const mode = useNotesStore((state) => state.mode);
   const selectedItemIds = useNotesStore((state) => state.selectedItemIds);
   const itemLimit = useSettingsStore((state) => state.itemLimit);
   const activeTab = useMemo(() => tabs.find((tab) => tab.id === activeTabId), [activeTabId, tabs]);
@@ -15,11 +16,11 @@ export function ItemList() {
   return (
     <section className="item-list" aria-label="Items">
       {!activeTab || activeTab.items.length === 0 ? (
-        <p className="empty-state">Press o to add an item</p>
+        <p className="empty-state">Press o or O to add an item</p>
       ) : (
         activeTab.items.map((item, index) => (
           <Item
-            focused={index === cursorIndex}
+            focused={mode !== "tabs" && index === cursorIndex}
             index={index}
             item={item}
             key={item.id}

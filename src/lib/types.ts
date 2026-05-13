@@ -72,4 +72,4 @@ export type Settings = {
   windowSize?: WindowSize;
 };
 
-export type AppMode = "nav" | "edit" | "move";
+export type AppMode = "nav" | "edit" | "move" | "tabs";

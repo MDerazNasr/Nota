@@ -286,10 +286,8 @@ function runCommand(
     moveByCharacter(editor, editorMode, -1);
   } else if (command === "l" || command === " ") {
     moveByCharacter(editor, editorMode, 1);
-  } else if (command === "j") {
-    jumpToBoundary(editor, "end", editorMode);
-  } else if (command === "k") {
-    jumpToBoundary(editor, "start", editorMode);
+  } else if (command === "j" || command === "k") {
+    return true;
   } else if (command === "w" || command === "W") {
     moveByWord(editor, editorMode, "next-start", command === "W");
   } else if (command === "b" || command === "B") {

@@ -35,6 +35,8 @@ The built app will be created at:
 src-tauri/target/release/bundle/macos/nota.app
 ```
 
+Open that `.app` bundle from Finder for local use. If macOS blocks it because it is a local unsigned build, right-click the app in Finder and choose Open.
+
 ## Development
 
 ### Requirements
@@ -42,7 +44,7 @@ src-tauri/target/release/bundle/macos/nota.app
 - macOS
 - Node.js 20 or newer
 - npm
-- Rust stable
+- Rust stable, required for `npm run tauri dev` and all local app builds
 - Tauri v2 system prerequisites
 
 ### Run Locally
@@ -76,17 +78,19 @@ The full Tauri bundle target may require extra local signing or packaging setup.
 | Toggle window | `Opt + Shift + N` |
 | Open settings | `Cmd + ,` |
 | New tab | `Cmd + T` |
-| Rename tab | `Cmd + Shift + R` |
+| Focus tabs | `k` from the first item |
+| Switch focused tab | `h` / `l` |
+| Rename focused tab | `i` |
 
 ### Tasks
 
 | Action | Default |
 | --- | --- |
 | Move cursor | `j` / `k` |
-| Switch tabs | `h` / `l` |
+| Top, middle, bottom visible item | `H` / `M` / `L` |
 | Create item below | `o` |
 | Create item above | `O` |
-| Edit focused item | `Enter` |
+| Edit focused item | `i` |
 | Delete focused item | `Delete` or `dd` |
 | Check item | `Cmd + Enter` |
 | Open first item link | `Cmd + X` |
@@ -101,6 +105,7 @@ The full Tauri bundle target may require extra local signing or packaging setup.
 | Append after task/link | `A` |
 | Visual mode | `v` |
 | Select whole task | `V` |
+| Normal-mode `j` / `k` in a task | No-op for one-line tasks |
 | Format selection | `Cmd + B`, `Cmd + I`, `Cmd + U` |
 | Link command | `/link` |
 | Tag command | `/tag-name` |

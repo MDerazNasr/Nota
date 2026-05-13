@@ -1,6 +1,7 @@
 import { useEffect, useRef, type MutableRefObject } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { extractFirstLink } from "../lib/content";
+import { itemIndexForViewportTarget, type ViewportTarget } from "../lib/itemViewport";
 import { moveModeHorizontalDirectionForKey, verticalDirectionForKey } from "../lib/navigationKeys";
 import { formatShortcut } from "../lib/shortcuts";
 import { useNotesStore } from "../store/notes";
@@ -38,10 +39,6 @@ export function useKeymap({ settingsOpen, setSettingsOpen }: KeymapOptions) {
         return;
       }
 
-      if (store.mode !== "nav") {
-        return;
-      }
-
       if (event.key === "Escape" && settingsOpen) {
         setSettingsOpen(false);
         return;
@@ -49,6 +46,15 @@ export function useKeymap({ settingsOpen, setSettingsOpen }: KeymapOptions) {
 
       if (hasCommandModifier(event)) {
         handleCommandKey(event, shortcut);
+        return;
+      }
+
+      if (store.mode === "tabs") {
+        handleTabModeKey(event);
+        return;
+      }
+
+      if (store.mode !== "nav") {
         return;
       }
 
@@ -169,9 +175,16 @@ function handleNavKey(event: KeyboardEvent, lastDAt: MutableRefObject<number>) {
 
   const verticalDirection = verticalDirectionForKey(event.key);
 
-  if (verticalDirection) {
+  if (isViewportTargetKey(event.key)) {
     event.preventDefault();
-    store.moveCursor(verticalDirection);
+    moveCursorToViewportTarget(event.key);
+  } else if (verticalDirection) {
+    event.preventDefault();
+    if (verticalDirection === "up" && store.cursorIndex <= 0) {
+      store.setMode("tabs");
+    } else {
+      store.moveCursor(verticalDirection);
+    }
   } else if (matchesShortcut(shortcut, shortcuts.createItemBelow)) {
     event.preventDefault();
     store.createItem("below");
@@ -205,6 +218,23 @@ function handleNavKey(event: KeyboardEvent, lastDAt: MutableRefObject<number>) {
   } else if (matchesShortcut(shortcut, shortcuts.editItem)) {
     event.preventDefault();
     store.setMode("edit");
+  }
+}
+
+function handleTabModeKey(event: KeyboardEvent) {
+  if (event.key === "h") {
+    event.preventDefault();
+    switchTab(-1);
+  } else if (event.key === "l") {
+    event.preventDefault();
+    switchTab(1);
+  } else if (event.key === "i") {
+    event.preventDefault();
+    const store = useNotesStore.getState();
+    store.setEditingTabId(store.activeTabId);
+  } else if (event.key === "j" || event.key === "Escape") {
+    event.preventDefault();
+    useNotesStore.getState().setMode("nav");
   }
 }
 
@@ -257,6 +287,23 @@ function switchTab(offset: number) {
 
   const nextIndex = (currentIndex + offset + store.tabs.length) % store.tabs.length;
   store.setActiveTab(store.tabs[nextIndex].id);
+}
+
+function isViewportTargetKey(key: string): key is ViewportTargetKey {
+  return key === "H" || key === "M" || key === "L";
+}
+
+type ViewportTargetKey = "H" | "M" | "L";
+
+function moveCursorToViewportTarget(key: ViewportTargetKey) {
+  const store = useNotesStore.getState();
+  const tab = store.tabs.find((entry) => entry.id === store.activeTabId);
+  const target: ViewportTarget = key === "H" ? "top" : key === "M" ? "middle" : "bottom";
+  const index = tab ? itemIndexForViewportTarget(tab.items, target) : null;
+
+  if (index !== null) {
+    store.setCursorIndex(index);
+  }
 }
 
 function deleteOnDoubleD(lastDAt: MutableRefObject<number>) {

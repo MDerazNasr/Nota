@@ -184,6 +184,14 @@ function normalizeSettings(value: unknown): Settings | null {
     shortcuts.toggleWindow = defaults.shortcuts.toggleWindow;
   }
 
+  if (shortcuts.renameTab === "CommandOrControl+Shift+R") {
+    shortcuts.renameTab = defaults.shortcuts.renameTab;
+  }
+
+  if (shortcuts.editItem === "Enter") {
+    shortcuts.editItem = defaults.shortcuts.editItem;
+  }
+
   return {
     ...defaults,
     ...value,

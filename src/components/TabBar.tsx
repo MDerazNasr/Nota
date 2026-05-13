@@ -5,6 +5,7 @@ export function TabBar() {
   const tabs = useNotesStore((state) => state.tabs);
   const activeTabId = useNotesStore((state) => state.activeTabId);
   const editingTabId = useNotesStore((state) => state.editingTabId);
+  const mode = useNotesStore((state) => state.mode);
   const createTab = useNotesStore((state) => state.createTab);
   const deleteTab = useNotesStore((state) => state.deleteTab);
   const dropTargetTabId = useNotesStore((state) => state.dropTargetTabId);
@@ -40,7 +41,7 @@ export function TabBar() {
             />
           ) : (
             <button
-              className={tab.id === activeTabId ? "tab-pill active" : "tab-pill"}
+              className={tabClassName(tab.id === activeTabId, mode === "tabs")}
               type="button"
               title={tab.title}
               onClick={() => setActiveTab(tab.id)}
@@ -76,6 +77,10 @@ export function TabBar() {
       </button>
     </nav>
   );
+}
+
+function tabClassName(active: boolean, tabMode: boolean) {
+  return ["tab-pill", active ? "active" : "", active && tabMode ? "tab-focused" : ""].filter(Boolean).join(" ");
 }
 
 type TabTitleInputProps = {
