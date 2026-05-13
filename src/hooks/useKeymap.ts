@@ -110,6 +110,12 @@ function handleCommandKey(
     return;
   }
 
+  if (matchesShortcut(shortcut, shortcuts.deleteTab)) {
+    event.preventDefault();
+    store.deleteTab(store.activeTabId);
+    return;
+  }
+
   if (matchesShortcut(shortcut, shortcuts.openItemLink)) {
     event.preventDefault();
     openFocusedItemLink(store);

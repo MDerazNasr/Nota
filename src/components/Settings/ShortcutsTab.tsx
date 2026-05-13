@@ -20,6 +20,7 @@ const HOTKEY_SECTIONS: Array<{
     label: "Tabs",
     shortcuts: [
       { key: "newTab", label: "New tab" },
+      { key: "deleteTab", label: "Delete list" },
       { key: "moveTabLeft", label: "Move tab left" },
       { key: "moveTabRight", label: "Move tab right" },
     ],
@@ -56,6 +57,7 @@ const REFERENCE_SECTIONS: Array<{
       { keyCombo: "Tab focus H/L", label: "Switch tabs" },
       { keyCombo: "Tab focus I", label: "Rename tab" },
       { keyCombo: "Tab focus J", label: "Return to tasks" },
+      { keyCombo: "Cmd+W", label: "Delete current list" },
       { keyCombo: "J/K", label: "Move settings selector" },
       { keyCombo: "Left/Right", label: "Adjust selected setting" },
       { keyCombo: "Left/Right on theme", label: "Cycle color schemes" },

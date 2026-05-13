@@ -78,6 +78,7 @@ The full Tauri bundle target may require extra local signing or packaging setup.
 | Toggle window | `Opt + Shift + N` |
 | Open settings | `Cmd + ,` |
 | New tab | `Cmd + T` |
+| Delete current list | `Cmd + W` |
 | Focus tabs | `k` from the first item |
 | Switch focused tab | `h` / `l` |
 | Rename focused tab | `i` |

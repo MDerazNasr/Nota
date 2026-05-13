@@ -33,6 +33,7 @@ export type AppState = {
 export type ShortcutMap = {
   toggleWindow: string;
   newTab: string;
+  deleteTab: string;
   openSettings: string;
   checkItem: string;
   renameTab: string;

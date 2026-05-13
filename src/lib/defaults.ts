@@ -13,6 +13,7 @@ export const EMPTY_DOC = {
 export const DEFAULT_SHORTCUTS = {
   toggleWindow: "Alt+Shift+KeyN",
   newTab: "CommandOrControl+T",
+  deleteTab: "CommandOrControl+W",
   openSettings: "CommandOrControl+,",
   checkItem: "CommandOrControl+Enter",
   renameTab: "",
