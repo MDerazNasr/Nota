@@ -16,7 +16,7 @@ export function ItemList() {
   return (
     <section className="item-list" aria-label="Items">
       {!activeTab || activeTab.items.length === 0 ? (
-        <p className="empty-state">Press o or O to add an item</p>
+        <p className="empty-state">Press o to add an item</p>
       ) : (
         activeTab.items.map((item, index) => (
           <Item
