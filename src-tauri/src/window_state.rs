@@ -44,8 +44,11 @@ pub fn restore_window_state<R: Runtime>(app: &AppHandle<R>) {
         let x = position.get("x").and_then(|value| value.as_i64());
         let y = position.get("y").and_then(|value| value.as_i64());
         if let (Some(x), Some(y)) = (x, y) {
-            let _ = window.set_position(PhysicalPosition::new(x as i32, y as i32));
-            return;
+            let position = PhysicalPosition::new(x as i32, y as i32);
+            if let Some(position) = clamp_window_position(&window, size, position) {
+                let _ = window.set_position(position);
+                return;
+            }
         }
     }
 
@@ -56,7 +59,18 @@ pub fn restore_window_state<R: Runtime>(app: &AppHandle<R>) {
 
 pub fn save_window_position<R: Runtime>(app: &AppHandle<R>, x: i32, y: i32) {
     if let Ok(store) = app.store("settings.json") {
-        store.set("windowPosition", json!({ "x": x, "y": y }));
+        let position = if let Some(window) = app.get_webview_window("main") {
+            let size = window.outer_size().unwrap_or(PhysicalSize::new(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT));
+            clamp_window_position(&window, clamp_window_size(size), PhysicalPosition::new(x, y))
+        } else {
+            Some(PhysicalPosition::new(x, y))
+        };
+
+        let Some(position) = position else {
+            return;
+        };
+
+        store.set("windowPosition", json!({ "x": position.x, "y": position.y }));
         let _ = store.save();
     }
 }
@@ -74,6 +88,29 @@ fn clamp_window_size(size: PhysicalSize<u32>) -> PhysicalSize<u32> {
         size.width.clamp(MIN_WINDOW_WIDTH, MAX_WINDOW_WIDTH),
         size.height.clamp(MIN_WINDOW_HEIGHT, MAX_WINDOW_HEIGHT),
     )
+}
+
+fn clamp_window_position<R: Runtime>(
+    window: &tauri::WebviewWindow<R>,
+    size: PhysicalSize<u32>,
+    position: PhysicalPosition<i32>,
+) -> Option<PhysicalPosition<i32>> {
+    let monitors = window.available_monitors().ok()?;
+    let monitor = monitors.into_iter().find(|monitor| {
+        let work_area = monitor.work_area();
+        position.x >= work_area.position.x
+            && position.y >= work_area.position.y
+            && position.x < work_area.position.x + work_area.size.width as i32
+            && position.y < work_area.position.y + work_area.size.height as i32
+    })?;
+    let work_area = monitor.work_area();
+    let max_x = work_area.position.x + work_area.size.width as i32 - size.width as i32;
+    let max_y = work_area.position.y + work_area.size.height as i32 - size.height as i32;
+
+    Some(PhysicalPosition::new(
+        position.x.clamp(work_area.position.x, max_x.max(work_area.position.x)),
+        position.y.clamp(work_area.position.y, max_y.max(work_area.position.y)),
+    ))
 }
 
 fn default_top_right_position<R: Runtime>(
