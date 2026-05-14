@@ -127,6 +127,21 @@ The rebuilt app must behave like the current floating overlay.
 - Default global toggle shortcut: `Option + Shift + N`.
 - Showing from global toggle must restore/clamp geometry, show the window, and focus it.
 
+Window event behavior:
+
+- First launch chooses top-right placement only after the final screen work area is known.
+- Saved positions are physical screen coordinates, not relative percentages.
+- If a saved position's top-left point is outside every available monitor work area, discard it.
+- If a saved position is inside a monitor but part of the window would extend beyond the work area, clamp x and y inward.
+- If saved width or height is below minimum or above maximum, clamp before positioning.
+- Moving the window writes the clamped final x and y to settings.
+- Resizing the window writes clamped width and height to settings.
+- Hide/show must not reset the saved geometry.
+- Minimize uses native minimize and does not alter saved geometry.
+- Close dot and close window event hide the window.
+- The app can be dragged only from empty title-bar space or the title-bar drag region. Buttons inside the title bar must not start a drag.
+- The pointer cursor does not need to change over the drag region, but drag must feel immediate with no threshold delay.
+
 ## App Layout
 
 ```text
@@ -146,6 +161,44 @@ Global visual rules:
 - Letter spacing remains normal.
 - No decorative gradients or marketing sections.
 - Use compact icon buttons where possible.
+
+## Micro Layout Rules
+
+Window and shell:
+
+- The shell fills the full window, not a centered card inside the window.
+- The shell clips all child content to the `12px` outer radius.
+- The shell uses an inset one-pixel border in the active theme border color.
+- The transparent window area outside the shell must not show white pixels.
+- The app surface is a vertical flex stack: title bar, tab bar, then item list.
+- Overlays sit above the app surface and cover the full shell.
+
+Spacing rhythm:
+
+- Horizontal shell padding is not global. Each region owns its own padding.
+- Title bar left controls use `12px` left padding.
+- Tab bar uses `8px` horizontal padding.
+- Item list uses `8px` padding on every side.
+- Settings tabs use `18px` side padding.
+- Settings content uses `18px` side padding.
+- Compact controls should stay between `24px` and `28px` high unless the row itself defines a larger height.
+
+Visual emphasis:
+
+- Focus is shown with accent color and muted accent fills, not heavy shadows.
+- Active and focused are separate states. Active means selected data, focused means keyboard target.
+- Selected items use surface hover background. Focused item uses accent-muted background and accent left border.
+- Move mode selection uses the existing selected item visuals. Do not invent a separate color system.
+- Done items remain readable but subdued with opacity and line-through.
+- Hover states are subtle and use surface hover.
+- Text should never touch the edge of a selector or pill. Use at least `8px` text padding in setting rows and shortcut rows.
+
+Scroll behavior:
+
+- Item list and tab bar hide scrollbars.
+- Settings content shows a thin grey scrollbar.
+- When keyboard focus changes to a row or item, scroll the nearest scroll container just enough to reveal it.
+- Do not scroll the full window because the window itself does not scroll.
 
 ## Data Model
 
@@ -247,6 +300,58 @@ Task editor modes:
 - `visual`
 - `visualLine`
 
+## Input Dispatch Rules
+
+Every key press must be handled by exactly one active scope. Build a central dispatcher with this priority order:
+
+1. Global macOS hotkey scope handles `Option+Shift+N` even when the app is hidden or unfocused.
+2. If the app window is visible and the key is the editable Open Settings shortcut, default `Cmd+,`, toggle settings immediately.
+3. If a shortcut capture button in Settings is active, all keys go to shortcut capture except global show/hide.
+4. If the link popup is open, all typing, Tab, Shift+Tab, Enter, Escape, `n`, and `N` go to the link popup.
+5. If a task slash menu is open, printable characters keep editing the slash query. Enter selects, Escape dismisses, and app navigation must not run.
+6. If a task text editor is focused, task editor Vim handling owns the event, except app-level `Cmd+Enter` for done and `Cmd+X` for open link.
+7. If a tag pill is focused, tag keyboard handling owns ArrowLeft, ArrowRight, Backspace, Delete, and Escape.
+8. If Settings is open, the Settings keymap owns all non-captured keys, except `Cmd+,` and Escape which close Settings.
+9. If app mode is `move`, move-mode keys own the event.
+10. If app mode is `tabMove`, tab move keys own the event.
+11. If a command shortcut with Command, Control, or Option matches an app command, run that command.
+12. If app mode is `tabs`, tab focus keys own the event.
+13. If app mode is `nav`, list navigation keys own the event.
+
+Prevent default behavior whenever nota handles a key. Do not let a handled key also type into a field, scroll the page, activate a native button, or trigger a system beep.
+
+Scope rules:
+
+- Settings overlay visually covers the app and should block list navigation underneath.
+- About has no selectable rows and no Vim cursor.
+- App-level undo only runs in app scopes. Task editor undo only runs in task editor scopes.
+- Arrow keys are context-specific. Never make arrow keys global app navigation.
+- Printable letters are text input whenever an editable text field, task editor insert mode, slash query, link popup, or tab rename input is active.
+- When focus leaves a task editor because Escape exits normal mode, return to nav mode and keep the list cursor on that task.
+- When focus leaves Settings, restore app mode to `nav` unless a task editor is explicitly being focused by user click.
+
+## Command Activation Details
+
+Command shortcuts:
+
+- `Cmd+,` always toggles Settings. If Settings opens, it opens to Appearance and row index `0`. If Settings closes, app mode becomes `nav`.
+- `Cmd+T` creates a tab unless a text field, link popup, shortcut capture, or task insert mode owns the key.
+- `Cmd+W` deletes the active list unless a text field, link popup, shortcut capture, or task insert mode owns the key.
+- `Cmd+Enter` toggles done on the focused task from nav, move, or task edit. It does nothing when no task is focused.
+- `Cmd+X` opens the first link in the focused task. It does nothing if the focused task has no link.
+- `Cmd+.` toggles tag sort for the active tab. It does nothing when the tab has fewer than two items and sort is inactive.
+- `Cmd+1` through `Cmd+9` switch to the matching tab index when it exists. Missing tab numbers do nothing.
+
+Plain-key activation:
+
+- `o` and `O` only create items in nav mode. They do nothing in settings, tab rename, link popup, task insert mode, or slash query.
+- `i` edits the focused item in nav mode and renames the focused tab in tabs mode.
+- Space enters move mode from nav mode, enters tab move mode from tabs mode, and exits move or tab move mode when already moving.
+- `u` is app undo in nav and move mode only. In task normal mode, `u` is text-editor undo.
+- `d` waits for a second `d` for up to `500ms` in nav mode. In move mode, one `d` deletes selected tasks.
+- `h/l` switch tabs in nav and tabs mode. In task normal mode, they move inside task text. In settings, they switch settings sections.
+- `j/k` move the list cursor in nav mode, select/reorder in move mode, and move the settings selector in Settings.
+
 ## Shortcut Defaults
 
 Use this shortcut map and make user-editable shortcuts for every editable row.
@@ -290,6 +395,21 @@ Layout:
 - Tag sort disabled when current tab has no tags and tag sort is inactive.
 - Settings button opens settings overlay.
 
+Title bar placement details:
+
+- Use a three-column grid: `64px 1fr 64px`.
+- Left dots are vertically centered.
+- Dot container gap is `8px`.
+- The name `nota` sits in the center column but is aligned to the start of that column, not centered in the whole window.
+- Title text uses muted color and font size `12`.
+- Right actions are right aligned with `4px` right padding.
+- Icon glyphs are `14px` with stroke width around `1.75`.
+- Icon buttons have transparent background normally.
+- Icon buttons use surface hover background and primary text on hover.
+- Disabled icon buttons keep transparent background and use about `35%` opacity.
+- The tag sort button title is `Sort by rarest tag` when inactive and `Restore original order` when active.
+- The settings button title or accessibility label is `Open settings`.
+
 ## Tabs
 
 - Tab bar height `32`.
@@ -309,6 +429,26 @@ Layout:
 - Deleting active tab activates the previous tab when possible.
 - Reordering active tab preserves active selection.
 
+Tab interaction details:
+
+- A tab button has min width `28` and max width `120`.
+- A tab wrapper has max width about `148` so the delete button fits beside the title.
+- Tab labels truncate with ellipsis and never wrap.
+- Tab add button is visually the same height as tabs and shows `+`.
+- The delete tab button is about `20px` wide, transparent, muted, and changes to primary text on hover.
+- Clicking a tab activates it and clears selected task IDs.
+- Activating a tab sets cursor to the first item if the tab has items, otherwise `-1`.
+- Double-clicking a tab replaces the label with the title input.
+- Title input focuses immediately and selects the full current title.
+- Enter in the title input confirms by blurring.
+- Escape in the title input confirms the current draft the same as blur.
+- If the title input loses focus, normalize and save the title.
+- Context delete menu appears below the tab at about `top 28`, width `96`, padding `8`, font size `11`.
+- In tabs mode, only the active tab receives the keyboard focus visual.
+- In tab move mode, the active tab remains active and receives the moving visual.
+- Reordering at the first tab with `h` does nothing.
+- Reordering at the last tab with `l` does nothing.
+
 ## Item List and Rows
 
 List:
@@ -319,6 +459,22 @@ List:
 - Empty text top margin `24`, centered, muted, font size `15`, weight `600`.
 - Show `limit reached` in red `#f87171` at font size `11` when item limit is reached.
 - Moving cursor with `j/k` must scroll focused row into view using nearest behavior.
+
+List behavior details:
+
+- The item list is the only vertical scroll area in the main app surface.
+- Empty state appears inside the list, not in the tab bar or title bar.
+- When the active tab changes, cursor becomes first item index or `-1`.
+- When a task is deleted, cursor clamps to the deleted index if another item exists there, otherwise the previous last item.
+- When a task is created below, insertion index is current cursor plus one. If cursor is `-1`, insertion index is `0`.
+- When a task is created above, insertion index is current cursor. If cursor is `-1`, insertion index is `0`.
+- Creating an item immediately enters edit mode on that item.
+- Attempting to create past the item limit does nothing and keeps the current mode and cursor.
+- Moving `j/k` wraps within the active tab.
+- Pressing `k` at cursor `0` enters tabs mode instead of wrapping to the bottom.
+- Pressing `j` at the last item wraps to the first item.
+- `H/M/L` are based on visible rows in the scrolled list, not the entire tab.
+- If no visible row can be computed for `H/M/L`, keep the current cursor.
 
 Row:
 
@@ -338,6 +494,22 @@ Row:
 - Rich text line height `1.35`, wraps anywhere.
 - Links are accent colored and underlined with `2px` underline offset.
 
+Row interaction details:
+
+- Clicking a row without modifiers sets cursor to that row, clears multi-selection, and enters edit mode.
+- Cmd-click, Ctrl-click, or Shift-click on a row toggles that item in the selected set and keeps app mode nav.
+- Clicking the circular select control toggles selection and does not enter text editing.
+- Clicking the drag handle never enters editing.
+- Pointer drag starts only from the drag handle with primary mouse button.
+- If the dragged item is already selected, drag the whole selected set. Otherwise select and drag only that item.
+- During pointer drag, row drop target is computed by comparing pointer y to the row midpoint.
+- A tab drop target clears item drop target, and an item drop target clears tab drop target.
+- Pointer up on an item runs item reorder. Pointer up on a tab runs move to tab. Pointer cancel clears drag state.
+- Row body uses horizontal flex so tags sit after text when there is room and wrap when needed.
+- The text editor area flexes and can shrink, but it must never push tags outside the row.
+- Long task text wraps within the row and can increase row height.
+- A done row still allows selection, deletion, dragging, and editing.
+
 Vim cursor:
 
 - Show only in task edit normal or visual modes.
@@ -349,6 +521,21 @@ Vim cursor:
 - White background with difference blending.
 - Blink visible roughly first 45 percent of a 1 second stepped cycle.
 - In visual mode, cursor width `2`.
+
+Task focus details:
+
+- Task edit mode is entered by click, by `i` in nav mode, or after creating an item with `o` or `O`.
+- Entering edit mode from nav should focus the text at the end and begin in insert mode.
+- Pressing Escape once from insert mode switches to normal mode and shows the block cursor.
+- Pressing Escape again from normal mode exits to nav mode.
+- Clicking outside a task editor exits edit mode unless focus moved into that task's link popup or tag controls.
+- When edit mode exits, clear slash menu state, link popup state, and active tag index.
+- Each task editor owns its own Vim clipboard, search state, command buffer, and pending ex command.
+- Task editor state must not leak from one task to another.
+- Native caret is visible only in insert mode.
+- Block cursor position is computed from the current text selection's caret rectangle relative to the row.
+- If caret rectangle lookup fails, hide the custom cursor rather than drawing it in the wrong place.
+- Visual mode cursor is narrow because the text selection itself is the primary visual.
 
 ## Tags and Links
 
@@ -363,6 +550,21 @@ Slash menu:
 - `Escape` dismisses and removes slash text.
 - Typing `j` or `k` while slash menu is open must insert text, not navigate the app.
 
+Slash menu placement details:
+
+- Position the menu using the caret rectangle at the slash query end.
+- The menu top is caret bottom plus about `4px`.
+- The menu left is caret left.
+- The menu overlays rows and is not clipped by the row.
+- Menu width is `200`.
+- Menu max height is `180`, with internal vertical scrolling when needed.
+- Menu item padding is `6px 8px`.
+- Menu item gap between label and description is `2px`.
+- Menu labels use primary text, descriptions use muted text at font size `11`.
+- Active or hovered menu item uses accent muted background.
+- Existing tag suggestions include a small color dot about `8px`.
+- The slash menu should update as the user types and disappear when the slash pattern no longer exists.
+
 Tag rules:
 
 - A task can have multiple tags.
@@ -376,6 +578,16 @@ Tag rules:
 - Left Arrow on first tag returns focus to task text.
 - Escape from tags returns focus to task text.
 
+Tag keyboard details:
+
+- Entering tag focus sets app mode to edit and task editor mode to normal.
+- Active tag index starts at `0`.
+- ArrowRight on a tag moves to the next tag and clamps at the final tag.
+- ArrowLeft on a tag moves to the previous tag. From index `0`, it returns to task text.
+- Removing a tag focuses the tag now occupying the same index. If no tag remains, return to task text.
+- Clicking a tag remove button removes the tag without changing the task text.
+- If active tag index points past the end after removal, clear tag focus and return to task text.
+
 Link popup:
 
 - Opens from `/link`.
@@ -387,6 +599,19 @@ Link popup:
 - `Escape` cancels.
 - After insert, close popup, focus editor, and set normal mode.
 - `A` after a link moves to task end, clears link typing attributes, and enters insert mode.
+
+Link popup details:
+
+- The popup is rendered above all task rows.
+- It has surface background, theme border, radius, and a shadow around `0 8 24 rgb(0 0 0 / 24%)`.
+- Label field appears first, URL field second.
+- Both inputs are `28px` high with `8px` horizontal padding.
+- Inputs use app background, primary text, border color, radius, and font size `12`.
+- The initial label can be empty.
+- Submit only if both label and URL are non-empty after trimming.
+- Cancel must restore focus to the editor when possible and remove popup state.
+- Inserting a link replaces the slash query with linked label text and immediately unsets the link mark for following text.
+- The URL should be normalized so `example.com` opens as a valid external URL.
 
 ## Release and README
 
@@ -518,6 +743,19 @@ New tag colors are randomly selected from this palette:
 - Scrollbar is grey using text muted.
 - No selector or cursor appears in About.
 
+Overlay placement details:
+
+- Settings is not a detached window. It is an in-app overlay covering the shell.
+- It uses absolute positioning relative to the shell.
+- Open state transform is `translateX(0)`.
+- Hidden state transform is `translateX(100%)` and pointer events are disabled.
+- The overlay z-index is above the app surface and below transient popups if any remain.
+- The overlay header stays at the top and does not scroll.
+- Only the settings section body scrolls.
+- Opening Settings always resets active section to Appearance and selector index to `0`.
+- Closing Settings clears the settings selector and returns app mode to nav.
+- The close button is the same `28 x 28` icon-button style as title bar actions.
+
 ## Appearance Tab
 
 - Theme row uses a `5` column grid.
@@ -532,6 +770,22 @@ New tag colors are randomly selected from this palette:
 - Row grid columns: label `88`, control `1fr`, reset `28`.
 - Row gap `8`, padding `4 8`, bottom border.
 - Reset button `24 x 24`, circular.
+
+Appearance row activation:
+
+- Theme row activation with Enter or Space advances to the next theme.
+- Theme row Left/Right moves one theme backward or forward in the flattened theme order.
+- Theme row Up/Down moves by five swatches because the grid has five columns.
+- Theme movement wraps around the theme list.
+- Font row activation focuses or opens the select control.
+- Font row Left/Right changes selected font by one option and clamps at first or last font.
+- Font row Space or Enter should open the font options if the platform supports it. If not, it should at least focus the select control.
+- Font row must not trap focus after a font is selected.
+- Font Size Left/Right changes by one point.
+- Radius Left/Right changes by one point.
+- Item Limit Left/Right changes by one item.
+- Slider values clamp to their min and max.
+- Reset button restores only that row's setting to default and keeps selector on the same row.
 
 ## Navigation Tab
 
@@ -566,6 +820,23 @@ Controls:
 - Escape cancels capture.
 - Non-editable rows show shortcut text in a `kbd` style.
 
+Navigation row activation:
+
+- Behavior toggle rows activate with Enter or Space and flip the checkbox.
+- Left on a behavior toggle sets it false.
+- Right on a behavior toggle sets it true.
+- Hotkey rows activate with Enter or Space and enter capture mode.
+- Clicking a hotkey button also enters capture mode.
+- Capture mode focuses the button and displays `Press keys`.
+- In capture mode, Escape cancels and keeps the old shortcut.
+- In capture mode, Backspace saves an empty disabled shortcut.
+- In capture mode, any valid key chord saves immediately and exits capture mode.
+- Updating the global toggle shortcut must unregister the old global shortcut and register the new one.
+- If global shortcut registration fails, keep the displayed saved value but show a small settings error.
+- Reference rows are selectable for keyboard consistency but Enter, Space, Left, and Right do nothing.
+- Section labels are not selectable rows.
+- The Navigation tab title must be `Navigation`, not `Hotkeys`.
+
 ## Settings Keyboard
 
 - Settings opens on Appearance with focus index `0`.
@@ -582,6 +853,33 @@ Controls:
 - Escape closes settings.
 - Shortcut capture blocks settings navigation.
 - After changing font, toggles, sliders, or themes, selector remains visible and navigation still works.
+
+Settings selector details:
+
+- Selectable rows are elements marked as settings rows and currently visible.
+- Selector movement wraps from last row to first row and first row to last row.
+- The focused row gets accent-muted background and border color accent.
+- The focused row radius is setting radius plus about `4px`.
+- The focused row must scroll into view when moving through long settings content.
+- Switching sections with `h/l` resets selector index to `0`.
+- About has no settings rows. `j/k/Enter/Space/Arrow` should do nothing in About.
+- Escape closes Settings from every settings section unless a hotkey capture is active.
+- If a hotkey capture is active, Escape cancels capture instead of closing Settings.
+- The settings keymap ignores keys originating from a hotkey capture element.
+- The settings keymap should not treat typing in a native select menu as app navigation.
+
+Arrow-key rules by context:
+
+- In Settings theme row, ArrowLeft and ArrowRight move one swatch horizontally through flattened order.
+- In Settings theme row, ArrowUp and ArrowDown move five swatches vertically and wrap.
+- In Settings slider rows, ArrowLeft and ArrowRight decrement or increment by step. ArrowUp and ArrowDown do nothing.
+- In Settings font row, ArrowLeft and ArrowRight change the selected font by one. ArrowUp and ArrowDown do nothing at the app keymap level.
+- In Settings toggle rows, ArrowLeft sets unchecked and ArrowRight sets checked. ArrowUp and ArrowDown do nothing.
+- In Settings hotkey rows, ArrowLeft and ArrowRight do nothing unless capture mode is active, in which case they are captured as shortcut keys when valid.
+- In task text normal mode, ArrowLeft and ArrowRight move text cursor by character, ArrowUp moves to start, and ArrowDown moves to end.
+- In task tag focus, ArrowLeft and ArrowRight move tag focus, Backspace/Delete removes tags, and ArrowUp/ArrowDown do nothing.
+- In nav mode, arrow keys are not required for list navigation unless explicitly mapped later. Vim keys are primary.
+- In move mode, Left/Right arrows move selection to adjacent tab and Up/Down may mirror `k/j` only if added intentionally.
 
 ## About Tab
 
@@ -620,6 +918,18 @@ In nav mode:
 - `Cmd+.`: toggle tag sort for active tab.
 - `Cmd+X`: open first link on focused task.
 
+Nav mode edge cases:
+
+- If the active tab has no items, `j`, `k`, `H`, `M`, `L`, Space, Delete, `dd`, `i`, and `Cmd+Enter` do nothing.
+- If the active tab has no items, `o` and `O` both insert the first item at index `0`.
+- If cursor index is invalid after loading or deleting data, clamp it before handling a key.
+- `h/l` tab switching wraps from first to last and last to first.
+- Switching tabs clears selected items and exits move mode.
+- Opening Settings from nav does not change active tab or cursor.
+- Closing Settings returns to the same active tab and cursor.
+- `dd` timing is local to nav mode. Entering another mode clears the pending first `d`.
+- If the user presses `d` then any non-`d` key, the pending delete should expire or be ignored.
+
 Tabs mode:
 
 - Entered by pressing `k` on the first item.
@@ -635,6 +945,14 @@ Tab move mode:
 - `h/l`: reorder active tab left or right.
 - Space or Escape: apply order and return to tabs mode.
 
+Mode transition visuals:
+
+- In nav mode, the focused item row is highlighted unless Settings is open.
+- In tabs mode, item focus is suppressed and active tab focus is highlighted.
+- In tab move mode, item focus is suppressed and active tab moving state is highlighted.
+- In move mode, focused item remains visible and selected items are highlighted.
+- Exiting move mode with Space or Escape clears the selected highlight. No stale selected item should remain highlighted.
+
 ## Move Mode
 
 - Enter with Space from nav mode on a focused item.
@@ -647,6 +965,21 @@ Tab move mode:
 - `Cmd+j/k` or `Ctrl+j/k`: add or remove one item at a time.
 - `h/l` or Left/Right: move selection to adjacent tab.
 - Keyboard movement preserves selection visuals and cursor.
+
+Move mode selection details:
+
+- `selectionAnchorId` is the item that was focused when move mode started unless a selected set already contains the focused item.
+- Plain `j/k` reorders selected items without changing which items are selected.
+- Reordering down processes selected items from bottom to top so selected groups move as a block.
+- Reordering up processes selected items from top to bottom so selected groups move as a block.
+- Reordering at the top or bottom does nothing for items already against that boundary.
+- `Shift+j/k` creates a contiguous range from anchor to the next cursor position.
+- `Cmd+j/k` toggles only the next item in that direction while moving the cursor to it.
+- When moving selected items to an adjacent tab, activate the target tab and keep moved items selected only if staying in move mode.
+- If target tab lacks capacity because of item limit, move only the items that fit.
+- If no selected item can move because the target tab is full, keep current tab, cursor, mode, and selection.
+- Pressing `d` deletes all selected items across the active tab selection and exits to nav.
+- Pressing `u` restores the previous app state and exits to nav.
 
 Pointer drag:
 
@@ -676,6 +1009,22 @@ Editing behavior:
 - Clicking a link opens it externally.
 - After inserting a link through `/link`, return to normal mode.
 - Pressing `A` in normal mode moves to task end, clears link typing attributes, and enters insert mode.
+
+Editor event details:
+
+- Insert mode allows normal typing, deletion, native selection, and paste.
+- Insert mode only intercepts Escape and app-level command shortcuts.
+- Normal mode prevents printable characters from being inserted unless they are valid commands that enter insert mode.
+- Visual mode extends selection when movement commands run.
+- Visual line mode selects the full task content.
+- Command buffers reset after a complete command, failed command, Escape, or mode exit.
+- Search input and ex-command input are modal text buffers inside normal mode.
+- While entering `/pattern` or `:%s/...`, printable keys append to that pending buffer and do not edit task text.
+- Backspace inside a pending search or ex command removes one pending character.
+- Enter confirms the pending search or ex command.
+- Escape cancels the pending search or ex command.
+- `Cmd+B/I/U` should work in insert, normal, and visual mode if there is a usable selection or typing range.
+- In normal mode with no selection, formatting may toggle typing attributes for the current cursor position, but it must not insert text.
 
 Task Vim movement:
 
@@ -862,3 +1211,22 @@ Tag sort:
 - About has no selector cursor.
 - All themes and fonts render without clipping or unreadable contrast.
 - App-level undo and task-editor undo are separate.
+
+Micro-design acceptance:
+
+- No white corners are visible around the rounded app shell on dark or light desktop backgrounds.
+- Text in tabs, settings rows, shortcut buttons, tags, and item rows never touches its container edge.
+- Long tab names truncate with ellipsis and do not push the delete button out of view.
+- Long task text wraps and does not overlap tags.
+- Tags wrap cleanly and do not overflow the row.
+- The focused settings row remains visible while scrolling through Navigation.
+- Changing font in Settings does not trap focus in the font control.
+- Changing any checkbox does not make the selector disappear.
+- ArrowUp and ArrowDown do not affect settings rows outside the theme grid.
+- The slash menu is not clipped by the item row.
+- The link popup always closes after submit, cancel, or editor exit.
+- Stale move highlights do not remain after exiting move mode.
+- The tag sort active button visibly differs from inactive state.
+- Disabled tag sort button still occupies the same title-bar space, so the settings button does not shift.
+- The app remains usable at minimum window size `300 x 400`.
+- The app remains visually balanced at maximum window size `800 x 900`.
