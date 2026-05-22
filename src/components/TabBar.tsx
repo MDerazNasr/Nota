@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
+import { scrollActiveTabIntoView } from "../lib/tabScroll";
 import { useNotesStore } from "../store/notes";
 
 export function TabBar() {
+  const tabBarRef = useRef<HTMLElement>(null);
   const tabs = useNotesStore((state) => state.tabs);
   const activeTabId = useNotesStore((state) => state.activeTabId);
   const editingTabId = useNotesStore((state) => state.editingTabId);
@@ -14,18 +16,23 @@ export function TabBar() {
   const updateTabTitle = useNotesStore((state) => state.updateTabTitle);
   const [contextTabId, setContextTabId] = useState<string | null>(null);
   const [draftTitle, setDraftTitle] = useState("");
+  const tabOrderKey = tabs.map((tab) => tab.id).join(":");
 
   useEffect(() => {
     const tab = tabs.find((entry) => entry.id === editingTabId);
     setDraftTitle(tab?.title ?? "");
   }, [editingTabId, tabs]);
 
+  useEffect(() => {
+    scrollActiveTabIntoView(tabBarRef.current, activeTabId);
+  }, [activeTabId, tabOrderKey]);
+
   const confirmTitle = (id: string) => {
     updateTabTitle(id, draftTitle);
   };
 
   return (
-    <nav className="tab-bar" aria-label="Tabs" onMouseLeave={() => setContextTabId(null)}>
+    <nav ref={tabBarRef} className="tab-bar" aria-label="Tabs" onMouseLeave={() => setContextTabId(null)}>
       {tabs.map((tab) => (
         <div
           className={dropTargetTabId === tab.id ? "tab-wrap drop-target" : "tab-wrap"}
